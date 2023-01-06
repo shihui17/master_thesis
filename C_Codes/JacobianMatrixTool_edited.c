@@ -88,8 +88,11 @@ double mtool;
 double Ixxtool;
 double Iyytool;
 double Izztool;
+double T_n_TCP_1_4;
+double T_n_TCP_2_4;
+double T_n_TCP_3_4;
 
-void main(q1, m1, a1, d1, Ixx1, Iyy1, Izz1, XC1, YC1, ZC1, g1, dq1, ddq1, q2, m2, a2, d2, Ixx2, Iyy2, Izz2, XC2, YC2, ZC2, g2, dq2, ddq2, q3, m3, a3, d3, Ixx3, Iyy3, Izz3, XC3, YC3, ZC3, g3, dq3, ddq3, q4, m4, a4, d4, Ixx4, Iyy4, Izz4, XC4, YC4, ZC4, g4, dq4, ddq4, q5, m5, a5, d5, Ixx5, Iyy5, Izz5, XC5, YC5, ZC5, g5, dq5, ddq5, q6, m6, a6, d6, Ixx6, Iyy6, Izz6, XC6, YC6, ZC6, g6, dq6, ddq6){
+void main(T_n_TCP_1_4, T_n_TCP_2_4, T_n_TCP_3_4, q1, m1, a1, d1, Ixx1, Iyy1, Izz1, XC1, YC1, ZC1, g1, dq1, ddq1, q2, m2, a2, d2, Ixx2, Iyy2, Izz2, XC2, YC2, ZC2, g2, dq2, ddq2, q3, m3, a3, d3, Ixx3, Iyy3, Izz3, XC3, YC3, ZC3, g3, dq3, ddq3, q4, m4, a4, d4, Ixx4, Iyy4, Izz4, XC4, YC4, ZC4, g4, dq4, ddq4, q5, m5, a5, d5, Ixx5, Iyy5, Izz5, XC5, YC5, ZC5, g5, dq5, ddq5, q6, m6, a6, d6, Ixx6, Iyy6, Izz6, XC6, YC6, ZC6, g6, dq6, ddq6){
 
     t[2] = cos(q1);
     t[3] = cos(q2);
