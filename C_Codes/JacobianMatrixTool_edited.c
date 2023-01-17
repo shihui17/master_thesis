@@ -235,3 +235,4 @@ void main(T_n_TCP_1_4, T_n_TCP_2_4, T_n_TCP_3_4, q1, m1, a1, d1, Ixx1, Iyy1, Izz
     A0[5][5] = t[30]*(-1.0/2.0)+t[44]/2.0;
 
 }
+
