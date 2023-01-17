@@ -33,7 +33,7 @@ def auto_edit(code_list):
         f.write('#include <stdio.h>\n#include <math.h>\n\n') #create headers
         declaration = []
         for subscr in range(1, 7): #declare variables
-            f.write(f'double q{subscr};\ndouble m{subscr};\ndouble a{subscr};\ndouble d{subscr};\ndouble Ixx{subscr};\ndouble Iyy{subscr};\ndouble Izz{subscr};\ndouble XC{subscr};\ndouble YC{subscr};\ndouble ZC{subscr};\ndouble g{subscr};\ndouble dq{subscr};\ndouble ddq{subscr};\n')
+            f.write(f'double q{subscr};\ndouble dq{subscr};\ndouble ddq{subscr};\n')
             declaration.append(f'q{subscr}, m{subscr}, a{subscr}, d{subscr}, Ixx{subscr}, Iyy{subscr}, Izz{subscr}, XC{subscr}, YC{subscr}, ZC{subscr}, g{subscr}, dq{subscr}, ddq{subscr}, ')
             #f.write(f'double main(q{subscr}, m{subscr}, a{subscr}, d{subscr}, Ixx{subscr}, Iyy{subscr}, Izz{subscr}, XC{subscr}, YC{subscr}, ZC{subscr}, double g{subscr}, double dq{subscr}, double ddq{subscr})')
         f.write(f'double t[2400];\ndouble A0[5][5];\ndouble XCtool;\ndouble YCtool;\ndouble ZCtool;\ndouble mtool;\ndouble Ixxtool;\ndouble Iyytool;\ndouble Izztool;\ndouble T_n_TCP_1_4;\ndouble T_n_TCP_2_4;\ndouble T_n_TCP_3_4;\n\n')
