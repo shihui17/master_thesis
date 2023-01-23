@@ -17,7 +17,7 @@ sol = Yu.ikine_LM(efe)
 q_begin = np.zeros(6)
 q_end = sol.q
 
-t = np.arange(1, 31)
+t = np.linspace(0, 6, num=30)
 
 tg1 = tools.trapezoidal(0, q_end[0], 30)
 tg2 = tools.trapezoidal(0, q_end[1], 30)
@@ -58,7 +58,7 @@ ax3.set_xlabel('Travel Time in s')
 ax3.set_ylabel('joint acceleration in $1/s^2$')
 ax3.legend()
 
-#plt.show()
+plt.show()
 
 n = len(tg1.q)
 print(n)
