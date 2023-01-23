@@ -58,4 +58,7 @@ ax3.set_xlabel('Travel Time in s')
 ax3.set_ylabel('joint acceleration in $1/s^2$')
 ax3.legend()
 
-plt.show()
+#plt.show()
+
+n = len(tg1.q)
+print(n)
