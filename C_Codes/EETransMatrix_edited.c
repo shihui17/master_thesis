@@ -2,81 +2,21 @@
 #include <math.h>
 
 double q1;
-double m1;
-double a1;
-double d1;
-double Ixx1;
-double Iyy1;
-double Izz1;
-double XC1;
-double YC1;
-double ZC1;
-double g1;
 double dq1;
 double ddq1;
 double q2;
-double m2;
-double a2;
-double d2;
-double Ixx2;
-double Iyy2;
-double Izz2;
-double XC2;
-double YC2;
-double ZC2;
-double g2;
 double dq2;
 double ddq2;
 double q3;
-double m3;
-double a3;
-double d3;
-double Ixx3;
-double Iyy3;
-double Izz3;
-double XC3;
-double YC3;
-double ZC3;
-double g3;
 double dq3;
 double ddq3;
 double q4;
-double m4;
-double a4;
-double d4;
-double Ixx4;
-double Iyy4;
-double Izz4;
-double XC4;
-double YC4;
-double ZC4;
-double g4;
 double dq4;
 double ddq4;
 double q5;
-double m5;
-double a5;
-double d5;
-double Ixx5;
-double Iyy5;
-double Izz5;
-double XC5;
-double YC5;
-double ZC5;
-double g5;
 double dq5;
 double ddq5;
 double q6;
-double m6;
-double a6;
-double d6;
-double Ixx6;
-double Iyy6;
-double Izz6;
-double XC6;
-double YC6;
-double ZC6;
-double g6;
 double dq6;
 double ddq6;
 double t[2400];
@@ -91,8 +31,17 @@ double Izztool;
 double T_n_TCP_1_4;
 double T_n_TCP_2_4;
 double T_n_TCP_3_4;
+double a1;
+double a2;
+double a3;
+double d1;
+double d2;
+double d3;
+double d4;
+double d5;
+double d6;
 
-void main(q1, m1, a1, d1, Ixx1, Iyy1, Izz1, XC1, YC1, ZC1, g1, dq1, ddq1, q2, m2, a2, d2, Ixx2, Iyy2, Izz2, XC2, YC2, ZC2, g2, dq2, ddq2, q3, m3, a3, d3, Ixx3, Iyy3, Izz3, XC3, YC3, ZC3, g3, dq3, ddq3, q4, m4, a4, d4, Ixx4, Iyy4, Izz4, XC4, YC4, ZC4, g4, dq4, ddq4, q5, m5, a5, d5, Ixx5, Iyy5, Izz5, XC5, YC5, ZC5, g5, dq5, ddq5, q6, m6, a6, d6, Ixx6, Iyy6, Izz6, XC6, YC6, ZC6, g6, dq6, ddq6){
+int main(q1, dq1, ddq1, q2, dq2, ddq2, q3, dq3, ddq3, q4, dq4, ddq4, q5, dq5, ddq5, q6, dq6, ddq6){
 
     t[2] = cos(q1);
     t[3] = cos(q2);
@@ -174,5 +123,5 @@ void main(q1, m1, a1, d1, Ixx1, Iyy1, Izz1, XC1, YC1, ZC1, g1, dq1, ddq1, q2, m2
     A0[2][2] = -t[12]*t[54];
     A0[2][3] = d1-a2*t[9]-a3*t[16]-a3*t[17]-d5*(t[36]-t[39])+d6*t[12]*t[54];
     A0[3][3] = 1.0;
-
+return 0;
 }

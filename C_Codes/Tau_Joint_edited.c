@@ -142,9 +142,9 @@ double tau(double q1, double dq1, double ddq1, double q2, double dq2, double ddq
     Izz6 = 0.00221;
     a6 = 0;
     d6 = -0.1507;
-    g1 = 9.8;
-    g2 = 9.8;
-    g3 = 9.8;
+    g1 = 0;
+    g2 = 0;
+    g3 = -9.81;
     g4 = 9.8;
     g5 = 9.8;
     g6 = 9.8;
