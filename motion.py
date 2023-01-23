@@ -8,11 +8,9 @@ import math
 import spatialgeometry as sg
 from typing import Tuple
 
-robot = rtb.models.DH.Panda()
-print(robot.tool)
-print(robot.links[1])
+panda = rtb.models.DH.Panda()
 
-"""
+
 env = Swift()
 env.launch(realtime = True)
 env.add(panda)
@@ -62,5 +60,5 @@ for t in range(50):
     env.step(dt)
 
 print(np.round(results_qdd, 2))
-rtb.xplot(results_qd[:, 0], block=True) """
+rtb.xplot(results_qd[:, 0], block=True) 
 
