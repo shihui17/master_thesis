@@ -48,7 +48,7 @@ def eval_power(eval_pt):
 
 eval_power(p1)
 
-# The following section is for graph generation. Delete the comment to visualise q, dq and ddq
+# The following section is for graph generation. Uncomment to visualise q, dq and ddq
 """ 
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained',)
 
