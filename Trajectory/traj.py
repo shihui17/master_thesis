@@ -7,10 +7,10 @@ import spatialmath as sm
 import spatialgeometry as sg
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from call_tau import *
 
 Yu = rtb.models.DH.Yu()
 q0 = Yu.qa
-print(q0)
 efe = Yu.fkine(q0)
 sol = Yu.ikine_LM(efe)
 
@@ -26,6 +26,28 @@ tg4 = tools.trapezoidal(0, q_end[3], 30)
 tg5 = tools.trapezoidal(0, q_end[4], 30)
 tg6 = tools.trapezoidal(0, q_end[5], 30)
 
+p1 = 5
+p2 = 10
+p3 = 15
+p4 = 20
+
+def eval_power(eval_pt):
+    #argument in the order of: q1, qd1, qdd1, q2, ..... , qdd6
+    torque_vec = np.abs(cal_tau(tg1.q[eval_pt-1], tg1.qd[eval_pt-1], tg1.qdd[eval_pt-1], tg2.q[eval_pt-1], tg2.qd[eval_pt-1], tg2.qdd[eval_pt-1], 
+    tg3.q[eval_pt-1], tg3.qd[eval_pt-1], tg3.qdd[eval_pt-1], tg4.q[eval_pt-1], tg4.qd[eval_pt-1], tg4.qdd[eval_pt-1], 
+    tg5.q[eval_pt-1], tg5.qd[eval_pt-1], tg5.qdd[eval_pt-1], tg6.q[eval_pt-1], tg6.qd[eval_pt-1], tg6.qdd[eval_pt-1]))
+    #print(np.round(torque_vec, 2))
+    velocity_vec = np.array([tg1.qd[eval_pt-1], tg2.q[eval_pt-1], tg3.qd[eval_pt-1], tg4.qd[eval_pt-1], tg5.qd[eval_pt-1], tg6.qd[eval_pt-1]])
+    #print(velocity_vec)
+    power = np.multiply(torque_vec, velocity_vec)
+    print(power)
+    return power
+
+
+eval_power(p1)
+
+# The following section is for graph generation. Delete the comment to visualise q, dq and ddq
+""" 
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained',)
 
 ax1.plot(t, np.round(tg1.q, 6), label='q1')
@@ -59,6 +81,4 @@ ax3.set_ylabel('joint acceleration in $1/s^2$')
 ax3.legend()
 
 plt.show()
-
-n = len(tg1.q)
-print(n)
+"""
