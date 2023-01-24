@@ -2557,9 +2557,10 @@ double tau(double q1, double dq1, double ddq1, double q2, double dq2, double ddq
     return 0;
 
 }
-
+/*
 int main() {
     tau(0.524, 0.175, 0.8, 0.524, 0.175, 0.8, 0.524, 0.175, 0.8, 0.524, 0.175, 0.8, 0.524, 0.175, 0.8, 0.524, 0.175, 0.8);
     printf("%f, %f, %f, %f, %f, %f", A0[0][0], A0[1][0], A0[2][0], A0[3][0], A0[4][0], A0[5][0]);
     return 0;
 }
+*/
