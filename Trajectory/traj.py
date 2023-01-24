@@ -31,18 +31,20 @@ p2 = 10
 p3 = 15
 p4 = 20
 
+# evaluate the power output of each robot axis at a given point eval_pt on the trajectory
 def eval_power(eval_pt):
-    #argument in the order of: q1, qd1, qdd1, q2, ..... , qdd6
+    # calculate the torque vector(tau), argument in the order of: q1, qd1, qdd1, q2, ..... , qdd6
     torque_vec = np.abs(cal_tau(tg1.q[eval_pt-1], tg1.qd[eval_pt-1], tg1.qdd[eval_pt-1], tg2.q[eval_pt-1], tg2.qd[eval_pt-1], tg2.qdd[eval_pt-1], 
     tg3.q[eval_pt-1], tg3.qd[eval_pt-1], tg3.qdd[eval_pt-1], tg4.q[eval_pt-1], tg4.qd[eval_pt-1], tg4.qdd[eval_pt-1], 
     tg5.q[eval_pt-1], tg5.qd[eval_pt-1], tg5.qdd[eval_pt-1], tg6.q[eval_pt-1], tg6.qd[eval_pt-1], tg6.qdd[eval_pt-1]))
     #print(np.round(torque_vec, 2))
+    # calculate the velocity vector(qd)
     velocity_vec = np.array([tg1.qd[eval_pt-1], tg2.q[eval_pt-1], tg3.qd[eval_pt-1], tg4.qd[eval_pt-1], tg5.qd[eval_pt-1], tg6.qd[eval_pt-1]])
     #print(velocity_vec)
+    # calculate power output, elementwise multiplication of torque vector and velocity vector
     power = np.multiply(torque_vec, velocity_vec)
     print(power)
     return power
-
 
 eval_power(p1)
 
