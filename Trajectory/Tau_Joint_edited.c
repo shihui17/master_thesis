@@ -2559,7 +2559,7 @@ torq tau(double q1, double dq1, double ddq1, double q2, double dq2, double ddq2,
 
 
 int main() {
-    torq a = tau(0.524, 0.175, 0.8, 0.524, 0.175, 0.8, 0.524, 0.175, 0.8, 0.524, 0.175, 0.8, 0.524, 0.175, 0.8, 0.524, 0.175, 0.8);
+    torq a = tau(0, 0, 0, -3.1415926/2, 0, 0, 0, 0, 0, -3.1415926/2, 0, 0, 0, 0, 0, 0, 0, 0);
     printf("%f, %f, %f, %f, %f, %f", a.tau1, a.tau2, a.tau3, a.tau4, a.tau5, a.tau6);
     return 0;
 }
