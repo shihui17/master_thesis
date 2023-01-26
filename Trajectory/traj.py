@@ -11,19 +11,17 @@ from call_tau import *
 
 def generate_traj(num):
     Yu = rtb.models.DH.Yu()
-    q0 = Yu.qa
-    efe = Yu.fkine(q0)
-    sol = Yu.ikine_LM(efe)
-    q_begin = np.zeros(6)
-    q_end = sol.q
+    q_end = Yu.qa
     t = np.linspace(0, 5, num)
-    tg1 = tools.trapezoidal(0, q_end[0], num)
-    tg2 = tools.trapezoidal(0, q_end[1], num)
-    tg3 = tools.trapezoidal(0, q_end[2], num)
-    tg4 = tools.trapezoidal(0, q_end[3], num)
-    tg5 = tools.trapezoidal(0, q_end[4], num)
-    tg6 = tools.trapezoidal(0, q_end[5], num)
+    tg1 = tools.trapezoidal(pi/2, q_end[0], num)
+    tg2 = tools.trapezoidal(pi/3, q_end[1], num)
+    tg3 = tools.trapezoidal(pi/4, q_end[2], num)
+    tg4 = tools.trapezoidal(pi/6, q_end[3], num)
+    tg5 = tools.trapezoidal(pi/3, q_end[4], num)
+    tg6 = tools.trapezoidal(pi/6, q_end[5], num)
     return tg1, tg2, tg3, tg4, tg5, tg6, t
+
+
 
 p1 = 5
 p2 = 10
@@ -55,8 +53,8 @@ def eval_power(joint_vec):
 
 
 # The following section is for graph generation. Uncomment to visualise q, dq and ddq
-"""
-rdr = generate_traj()
+
+rdr = generate_traj(20)
 
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained',)
 ax1.plot(rdr[6], np.round(rdr[0].q, 6), label='q1')
@@ -89,5 +87,4 @@ ax3.set_xlabel('Travel Time in s')
 ax3.set_ylabel('joint acceleration in $1/s^2$')
 ax3.legend()
 
-plt.show()
-"""
+#plt.show()

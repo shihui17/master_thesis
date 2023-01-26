@@ -11,6 +11,8 @@ from numpy import matlib
 from call_tau import *
 from traj import *
 
+
+"""
 a = generate_traj(20)
 power = np.zeros((20, 6))
 sum_power = np.zeros(20)
@@ -41,3 +43,11 @@ ax1.legend()
 
 plt.show()
 
+"""
+num = 20
+Yu = rtb.models.DH.Yu()
+q0 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+q_end = np.array([pi/2, 0, 0, 0, 0, pi/2])
+print(q_end)
+t = np.linspace(0, 5, num)
+traj = tools.trapezoidal(0, q_end[0], num)
