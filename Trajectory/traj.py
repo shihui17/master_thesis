@@ -52,6 +52,8 @@ def eval_power(joint_vec):
     return power
 
 
+
+
 # The following section is for graph generation. Uncomment to visualise q, dq and ddq
 
 rdr = generate_traj(20)
@@ -75,7 +77,7 @@ ax2.plot(rdr[6], np.round(rdr[4].qd, 6), label='q5')
 ax2.plot(rdr[6], np.round(rdr[5].qd, 6), label='q6')
 ax2.set_xlabel('Travel Time in s')
 ax2.set_ylabel('joint velocity in 1/s')
-ax2.legend()
+#ax2.legend()
 
 ax3.plot(rdr[6], np.round(rdr[0].qdd, 6), label='q1')
 ax3.plot(rdr[6], np.round(rdr[1].qdd, 6), label='q2')
@@ -85,6 +87,6 @@ ax3.plot(rdr[6], np.round(rdr[4].qdd, 6), label='q5')
 ax3.plot(rdr[6], np.round(rdr[5].qdd, 6), label='q6')
 ax3.set_xlabel('Travel Time in s')
 ax3.set_ylabel('joint acceleration in $1/s^2$')
-ax3.legend()
+#ax3.legend()
 
-#plt.show()
+plt.show()

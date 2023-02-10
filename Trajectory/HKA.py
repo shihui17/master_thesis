@@ -12,15 +12,15 @@ from call_tau import *
 from traj import *
 
 def kalman_gain(sig, var_post, mu, mu_meas):
-    L = np.divide(np.square(sig), (np.square(sig) + var_post))
-    mu_post = mu + np.multiply(L, (mu_meas - mu))
-    P = np.square(sig) - np.multiply(L, np.square(sig))
+    L = np.divide(np.square(sig), (np.square(sig) + var_post)) # Kalman gain
+    mu_post = mu + np.multiply(L, (mu_meas - mu)) # post mean
+    P = np.square(sig) - np.multiply(L, np.square(sig)) # post covariance
     s = np.min([1, np.mean(np.sqrt(var_post))])
-    a = 0.6 * (s**2 / (s**2 + np.max(P)))
+    a = 0.6 * (s**2 / (s**2 + np.max(P))) # slowdown factor to slow down the convergence, coefficient (in this case 0.6) can vary (see HKA book)
     #print(P)
     #print(var_q_post)
-    sig_new = sig + a * (np.sqrt(P) - sig)
-    mu_new = mu_post
+    sig_new = sig + a * (np.sqrt(P) - sig) # set new std. deviation
+    mu_new = mu_post # set new mean
     return mu_new, sig_new
 
 def HKA(N, Nbest, D, alpha, sd, n):
@@ -38,7 +38,7 @@ def HKA(N, Nbest, D, alpha, sd, n):
     assble_q = np.zeros((N, n))
     assble_qd = np.zeros((N, n))
     assble_qdd = np.zeros((N, n))
-    joint = generate_traj(20)
+    joint = generate_traj(20) # generate trapezoidal trajectory with 20 time steps, change config in traj.py
 
     # initialize mean vector mu_q, mu_qd, mu_qdd, and std vector sig_q, sig_qd, sig_qdd
     for i in range(n):
@@ -52,9 +52,14 @@ def HKA(N, Nbest, D, alpha, sd, n):
         #mu[i] = (D[0, i] + D[1, i])/2 # initialize mean vector
         sig_qdd[i] = 0.01 # initialize std vector
 
-    print(mu_q)
-    print(mu_qd)
-    print(mu_qdd)
+    print(f'Original joint angle vector:\n{mu_q}\n')
+    print(f'Original joint velocity vector:\n{mu_qd}\n')
+    print(f'Original joint acceleration vector:\n{mu_qdd}\n')
+
+    ref_torq = cal_tau(mu_q, mu_qd, mu_qdd) # original output torque for reference
+    ref_power = np.multiply(ref_torq, mu_qd) # calculate orginal power output of each joint
+    ref_total_power = np.linalg.norm(ref_power, 1) # summation to get total power output
+    print(f'Original total power output: {ref_total_power} W\n')
 
     while iter <= max_iter:
         for i in range (n):
@@ -84,19 +89,21 @@ def HKA(N, Nbest, D, alpha, sd, n):
 
         #print(val_func)
         sort_val_func = np.sort(val_func, order='Power')
-        #print(sort_val_func)
+        #print(f'{sort_val_func}\nIteration: {iter}\n') # uncomment to print cost function value in each iteration
 
         post_q = np.zeros((10, 6))
         post_qd = np.zeros((10, 6))
         post_qdd = np.zeros((10, 6))
         num_array = sort_val_func['Number']
+        #print(num_array)
         #print(num_array[0])
         #print(assble_q)
         #print(post_q)
 
+        # assemble sorted q, qd, and qdd matrices for update step
         for i in range(10):
-            num = num_array[i]
-            post_q[i, :] = assble_q[num-1, :]
+            num = num_array[i] # returns the index for num-th best candidate
+            post_q[i, :] = assble_q[num-1, :] # place the (num-1)th row of the assembled q-matrix onto the i-th row of the post_q matrix
             post_qd[i, :] = assble_qd[num-1, :]
             post_qdd[i, :] = assble_qdd[num-1, :]
 
@@ -139,8 +146,8 @@ def HKA(N, Nbest, D, alpha, sd, n):
         #print(assble_qd)
 
         iter = iter + 1
-    print(f'Power output of each joint converges at {assble_qd[0, :]} rad/s, total power output: {sort_val_func[0]}')
-    print(assble_q[0, :], assble_qd[0, :], assble_qdd[0, :])
+    print(f'Power output of each joint converges at {assble_qd[0, :]} rad/s, total power output: {sort_val_func[0]} W\n')
+    print(f'Optimized joint angle:\n{assble_q[0, :]}\n\nOptimized joint velocity:\n{assble_qd[0, :]}\n\nOptimized joint acceleration:\n{assble_qdd[0, :]}')
 
 
 
