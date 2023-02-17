@@ -12,16 +12,16 @@ from call_tau import *
 def generate_traj(num):
     Yu = rtb.models.DH.Yu()
     q_end = Yu.qa
-    t = np.linspace(0, 5, num)
+    t = np.linspace(0, num, num)
     tg1 = tools.trapezoidal(pi/2, q_end[0], num)
     tg2 = tools.trapezoidal(pi/3, q_end[1], num)
-    tg3 = tools.trapezoidal(pi/4, q_end[2], num)
+    tg3 = tools.trapezoidal(pi/6, pi, t)
     tg4 = tools.trapezoidal(pi/6, q_end[3], num)
     tg5 = tools.trapezoidal(pi/3, q_end[4], num)
     tg6 = tools.trapezoidal(pi/6, q_end[5], num)
     return tg1, tg2, tg3, tg4, tg5, tg6, t
 
-
+"""
 
 p1 = 5
 p2 = 10
@@ -52,10 +52,10 @@ def eval_power(joint_vec):
     return power
 
 
-
+"""
 
 # The following section is for graph generation. Uncomment to visualise q, dq and ddq
-
+"""
 rdr = generate_traj(20)
 
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained',)
@@ -90,3 +90,4 @@ ax3.set_ylabel('joint acceleration in $1/s^2$')
 #ax3.legend()
 
 plt.show()
+"""

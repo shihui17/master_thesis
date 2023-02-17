@@ -95,7 +95,7 @@ torq tau(double q1, double dq1, double ddq1, double q2, double dq2, double ddq2,
     Iyy1 = 0.03619;
     Izz1 = 0.02264;
     a1 = 0;
-    d1 = 174.95/1000;
+    d1 = 0.17495;
     m2 = 9.572;
     XC2 = -0.23326;
     YC2 = 0;
@@ -2557,9 +2557,3 @@ torq tau(double q1, double dq1, double ddq1, double q2, double dq2, double ddq2,
     return result;
 }
 
-
-int main() {
-    torq a = tau(0, 0, 0, -3.1415926/2, 0, 0, 0, 0, 0, -3.1415926/2, 0, 0, 0, 0, 0, 0, 0, 0);
-    printf("%f, %f, %f, %f, %f, %f", a.tau1, a.tau2, a.tau3, a.tau4, a.tau5, a.tau6);
-    return 0;
-}

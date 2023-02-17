@@ -12,20 +12,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from call_tau import *
 
-def generate_traj(num):
-    Yu = rtb.models.DH.Yu()
-    q_end = Yu.qa
-    t = np.linspace(0, 5, num+1)
-    tg1 = tools.trapezoidal(pi/2, q_end[0], num+1)
-    tg2 = tools.trapezoidal(pi/3, q_end[1], num+1)
-    tg3 = tools.trapezoidal(pi/4, q_end[2], num+1)
-    tg4 = tools.trapezoidal(pi/6, q_end[3], num+1)
-    tg5 = tools.trapezoidal(pi/3, q_end[4], num+1)
-    tg6 = tools.trapezoidal(pi/6, q_end[5], num+1)
-    return tg1, tg2, tg3, tg4, tg5, tg6, t
-
-rdr = generate_traj(20)
-
 def hermite_basis(t):
     # This function generates half of the Hermite base matrix
     HER_half = np.zeros((3, 6))
@@ -42,7 +28,7 @@ def hermite_basis(t):
     HER_half[1, 2] = -2.5*t**4 + 6*t**3 - 4.5*t**2 + t
     HER_half[1, 3] = 30*t**4 - 60*t**3 + 30*t**2
     HER_half[1, 4] = -15*t**4 + 28*t**3 - 12*t**2
-    HER_half[1, 5] = 2.5*t**4 - 4**t*3 + 1.5*t**2
+    HER_half[1, 5] = 2.5*t**4 - 4*t**3 + 1.5*t**2
     # Second derivative of the base function
     HER_half[2, 0] = -120*t**3 + 180*t**2 -60*t
     HER_half[2, 1] = -60*t**3 + 96*t**2 -36*t
@@ -62,7 +48,9 @@ def solver(t0, t1, x_point, y_point, num): # x_point: [q, qd, qdd] at x, y_point
     yval = np.transpose(y_point)
     val_total = np.concatenate((xval, yval), axis = 0)
     coeff = np.linalg.solve(HER_total, val_total)
-    func = np.ones(num+1)
+    func = np.zeros(num+1)
+    func_d = np.zeros(num+1)
+    func_dd = np.zeros(num+1)
     time_spline = np.zeros(num+1)
     delta = (t1-t0)/num
     i = 0
@@ -70,8 +58,13 @@ def solver(t0, t1, x_point, y_point, num): # x_point: [q, qd, qdd] at x, y_point
     #print(n)
     #print(t1)
     #print(f't0 = {t0}, loop ends when n >= {np.round(t1, 4)}')
-    while n < t1 + delta/100:
+
+    # Evaluate each point between t0 and t1 using quintic hermite base functions, results stored in func[] as a stacked matrix
+    # Time steps stored in time_spline[] as a stacked matrix
+    while n < t1 + delta/100: # plus a small margin to compensate floating point error
         func[i] = hermite_basis(n)[0, :].dot(coeff)
+        func_d[i] = hermite_basis(n)[1, :].dot(coeff)
+        func_dd[i] = hermite_basis(n)[2, :].dot(coeff)
         time_spline[i] = n
         #print(f'array func at index {i} has the value of {func[i]}, n = {n}')
         i = i + 1
@@ -79,30 +72,60 @@ def solver(t0, t1, x_point, y_point, num): # x_point: [q, qd, qdd] at x, y_point
         n = n + delta
         #print(n)
     #print(f'loop breaks at i = {i}, n = {n}')
-    return func, time_spline
+    #print(f'what is func? {func}')
+    return func, time_spline, func_d, func_dd
 
-def quintic_hermite_approx(num, joint_n, step_n):
+def quintic_hermite_approx(num, matrix_eval, time_vec, step_n): 
+    # num: number of points for trajectory generation, 
+    # joint_n: joint number(0-5)
+    # step_n: number of points for each hermite interpolation
+    flat_func_reconstr = np.zeros((num-1)*step_n)
 
-    rdr = generate_traj(num)
-    func = np.zeros((num, step_n+1))
+    func = list()
+    time = list()
+    func_d = list()
+    func_dd = list()
+    """
+    func1 = np.zeros(step_n+1)
+    time1 = np.zeros(step_n+1)
+    func2 = np.zeros(step_n)
+    time2 = np.zeros(step_n)
+    """
     time_spline = np.zeros((num, step_n+1))
 
-    for i in range(num):
-        x_point = np.array([rdr[joint_n].q[i], rdr[joint_n].qd[i], rdr[joint_n].qdd[i]])
-        y_point = np.array([rdr[joint_n].q[i+1], rdr[joint_n].qd[i+1], rdr[joint_n].qdd[i+1]])
-        func[i, :] = solver(rdr[6][i], rdr[6][i+1], x_point, y_point, step_n)[0]
-        time_spline[i, :] = solver(rdr[6][i], rdr[6][i+1], x_point, y_point, step_n)[1]
+    for i in range(num-1):
+        x_point = matrix_eval[i, :]
+        y_point = matrix_eval[i+1, :]
+        """
+        if i == 0:
+            func1 = solver(time_vec[i], time_vec[i+1], x_point, y_point, step_n)[0]
+            time1 = solver(time_vec[i], time_vec[i+1], x_point, y_point, step_n)[1]
+            func = func1
+            time = time1
+            #print(f'what is func1{func1}')
+        else:
+            func_org = solver(time_vec[i], time_vec[i+1], x_point, y_point, step_n)[0]
+            time_org = solver(time_vec[i], time_vec[i+1], x_point, y_point, step_n)[1]
+            func2 = func_org[1:]
+            time2 = time_org[1:]
+            #print(step_n)
+            #print(f'original func{func_org}')
+            #print(f'what is func2? {func2}')
+            func = np.concatenate((func, func2))
+            time = np.concatenate((time, time2))
+        """
 
-    flat_func = func.flatten()
-    flat_time_spline = time_spline.flatten()
-    print(func.flatten())
-    print(time_spline.flatten())
+        func.append(solver(time_vec[i], time_vec[i+1], x_point, y_point, step_n)[0])
+        time.append(solver(time_vec[i], time_vec[i+1], x_point, y_point, step_n)[1])
+        func_d.append(solver(time_vec[i], time_vec[i+1], x_point, y_point, step_n)[2])
+        func_dd.append(solver(time_vec[i], time_vec[i+1], x_point, y_point, step_n)[3])
+    #flat_func = func.flatten()
 
-    plt.plot(flat_time_spline, flat_func)
-    plt.plot(rdr[6], np.round(rdr[joint_n].q, 4))
-    plt.show()
+    return func, time, func_d, func_dd
+    #flat_time_spline = time_spline.flatten()
+    #print(func.flatten())
+    #print(time_spline.flatten())
 
-quintic_hermite_approx(20, 3, 40)
 
 """
     func = np.zeros((20, 10+1))
@@ -123,3 +146,5 @@ quintic_hermite_approx(20, 3, 40)
     plt.plot(rdr[6], np.round(rdr[3].q, 4))
     plt.show()
 """
+
+# To do : integrate the results from HKA into the quintic_hermite_approx to generate optimized trajectory

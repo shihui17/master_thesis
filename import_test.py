@@ -31,6 +31,8 @@ else:
                         [0, 0, 0, 1]]
     )
 
+myrobot.rne(q, qd, qdd)
+
 
 q = [pi/6, pi/6, pi/6, pi/6, pi/6, pi/6]       
 fwd = myrobot.fkine(q)
