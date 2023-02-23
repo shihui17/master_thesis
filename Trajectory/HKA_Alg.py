@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from numpy import matlib
 from call_tau import *
 from traj import *
-from quintic_hermite import *
 from scipy.interpolate import CubicHermiteSpline, BPoly
 
 def kalman_gain(sig, var_post, mu, mu_meas):
@@ -113,6 +112,8 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_steps):
         ref_total_power = np.linalg.norm(ref_power, 1) # summation to get total power output
         print(f'Original total power output: {ref_total_power} W\n')
 
+
+        
         while iter <= max_iter:
             for i in range (n):
                 s_q = np.random.normal(mu_q[i], sig_q[i], N)

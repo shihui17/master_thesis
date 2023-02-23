@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from numpy import matlib
 from call_tau import *
 from traj import *
-from quintic_hermite import *
 from scipy.interpolate import CubicHermiteSpline, BPoly   
 from HKA_Alg import *
 

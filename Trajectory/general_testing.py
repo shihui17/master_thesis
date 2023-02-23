@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from numpy import matlib
 from call_tau import *
 from traj import *
+from scipy.stats import truncnorm
+from scipy.interpolate import interp1d
 
 
 """
@@ -44,10 +46,46 @@ ax1.legend()
 plt.show()
 
 """
-num = 20
-Yu = rtb.models.DH.Yu()
-q0 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
-q_end = np.array([pi/2, 0, 0, 0, 0, pi/2])
-print(q_end)
-t = np.linspace(0, 5, num)
-traj = tools.trapezoidal(0, q_end[0], num)
+
+def generate_traj_time(traj_time):
+    Yu = rtb.models.DH.Yu()
+    q_end = Yu.qa
+    t = np.linspace(0, traj_time, 101)
+    tg1 = tools.trapezoidal(pi/2, q_end[0], t)
+    tg2 = tools.trapezoidal(pi/3, q_end[1], t)
+    tg3 = tools.trapezoidal(pi/6, pi, t)
+    tg4 = tools.trapezoidal(pi/6, q_end[3], t)
+    tg5 = tools.trapezoidal(pi/3, q_end[4], t)
+    tg6 = tools.trapezoidal(pi/6, q_end[5], t)
+
+    return tg1, tg2, tg3, tg4, tg5, tg6, t
+
+rdr = generate_traj_time(2)
+array_q = np.zeros(6)
+array_qd = np.zeros(6)
+array_qdd = np.zeros(6)
+dt = rdr[6][1] - rdr[6][0]
+energy = 0
+sample_num = 4
+ctr = 0
+
+for sn in range(sample_num):
+
+    energy = 0
+    mu_index = math.floor(100/(sample_num+1)*(sn+1))
+
+    while ctr < mu_index:
+
+
+        for jn in range(6):
+
+            array_q[jn] = rdr[jn].q[ctr]
+            array_qd[jn] = rdr[jn].qd[ctr]
+            array_qdd[jn] = rdr[jn].qdd[ctr]
+
+        torq = cal_tau(array_q, array_qd, array_qdd)
+        power = np.multiply(torq, array_qd)
+        energy = energy + np.linalg.norm(power, 1)*dt
+        ctr = ctr +1
+    print(energy)
+        

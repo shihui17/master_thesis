@@ -21,6 +21,21 @@ def generate_traj(num):
     tg6 = tools.trapezoidal(pi/6, q_end[5], num)
     return tg1, tg2, tg3, tg4, tg5, tg6, t
 
+def generate_traj_time(traj_time):
+    Yu = rtb.models.DH.Yu()
+    q_end = Yu.qa
+    t = np.linspace(0, traj_time, 101)
+    tg1 = tools.trapezoidal(pi/2, q_end[0], t)
+    tg2 = tools.trapezoidal(pi/3, q_end[1], t)
+    tg3 = tools.trapezoidal(pi/6, pi, t)
+    tg4 = tools.trapezoidal(pi/6, q_end[3], t)
+    tg5 = tools.trapezoidal(pi/3, q_end[4], t)
+    tg6 = tools.trapezoidal(pi/6, q_end[5], t)
+
+    return tg1, tg2, tg3, tg4, tg5, tg6, t
+
+
+
 """
 
 p1 = 5
@@ -56,7 +71,7 @@ def eval_power(joint_vec):
 
 # The following section is for graph generation. Uncomment to visualise q, dq and ddq
 """
-rdr = generate_traj(20)
+rdr = generate_traj_time(2)
 
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained',)
 ax1.plot(rdr[6], np.round(rdr[0].q, 6), label='q1')

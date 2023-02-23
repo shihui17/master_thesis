@@ -69,7 +69,7 @@ def quintic_hermite_interpolation(x, x1, x2, p0, v0, a0, p1, v1, a1):
 
 def evaluate(joint_num):
     
-    result_assemble = heuristic_kalman(150, 15, np.array([[0, 0, 0, 0, 0, 0], [0.0003, 5, 6, 8, 20, 10]]), 0, 0, 6, 6, 20)
+    result_assemble = heuristic_kalman(150, 15, np.array([[0, 0, 0, 0, 0, 0], [0.0003, 5, 6, 8, 20, 10]]), 0, 0, 6, 6, 10)
     result_q = result_assemble[0]
     result_qd = result_assemble[1]
     result_qdd = result_assemble[2]
