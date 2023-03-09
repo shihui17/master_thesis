@@ -69,7 +69,7 @@ def quintic_hermite_interpolation(x, x1, x2, p0, v0, a0, p1, v1, a1):
 
 def evaluate(joint_num):
     
-    result_assemble = heuristic_kalman(150, 15, np.array([[0, 0, 0, 0, 0, 0], [0.0003, 5, 6, 8, 20, 10]]), 0, 0, 6, 6, 10)
+    result_assemble = heuristic_kalman(150, 15, np.array([[0, 0, 0, 0, 0, 0], [0.0003, 5, 6, 8, 20, 10]]), 0, 0, 6, 4, 20)
     result_q = result_assemble[0]
     result_qd = result_assemble[1]
     result_qdd = result_assemble[2]
@@ -121,15 +121,19 @@ def evaluate(joint_num):
 
     fig1, (ax1, ax2, ax3) = plt.subplots(3, 1, layout = 'constrained')
     ax1.plot(t_total, curve_arr, label = 'Quintic Hermite')
+    ax1.plot(time, q_path, 'o')
     ax1.plot(t_eval, y, label = 'Berstein')
     ax1.plot(og_data[6], og_data[joint_num].q)
+    ax1.legend()
     ax2.plot(t_total, curve_d_arr)
     ax2.plot(og_data[6], og_data[joint_num].qd)
-    ax2.legend()
     ax2.plot(t_eval, y_d, label = 'First Derivative')
+    ax2.plot(time, qd_path, 'o')
+    ax2.legend()
     ax3.plot(t_total, curve_dd_arr)
     ax3.plot(og_data[6], og_data[joint_num].qdd)
     ax3.plot(t_eval, y_dd, label = 'Second Derivative')
+    ax3.plot(time, qdd_path, 'o')
     ax3.legend()
     plt.show()
     

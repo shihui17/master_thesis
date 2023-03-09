@@ -65,7 +65,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_steps):
     mu_qdd = np.zeros(n)
     sig_qdd = np.zeros(n)
     result = np.zeros(n+1)
-    max_iter = 20
+    max_iter = 150
     lb = matlib.repmat(D[0, :], N, 1)
     ub = matlib.repmat(D[1, :], N, 1)
     assble_q = np.zeros((N, n))
@@ -80,11 +80,13 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_steps):
     debug = 0
     joint = generate_traj(traj_steps) # generate trapezoidal trajectory with 20 time steps, change config in traj.py
     time_vec = np.zeros((sample_num+2, 1))
+    
     for sn in range(sample_num):
         iter = 0
         time_vec[sn+1] = traj_steps/(sample_num+1)*(sn+1)
         print(f'TEST!: {time_vec}')
         print(f'Calculating optimized trajectory at sample point {sn}, corresponding to trajectory time {traj_steps/(sample_num+1)*(sn+1)}\n')
+        mu_index = math.floor(traj_steps/(sample_num+1)*(sn+1))
 
         for i in range(n):
             result_q[0, i] = joint[i].q[0]
@@ -93,15 +95,18 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_steps):
 
         # initialize mean vector mu_q, mu_qd, mu_qdd, and std vector sig_q, sig_qd, sig_qdd
         for i in range(n):
-            mu_q[i] = joint[i].q[math.floor(traj_steps/(sample_num+1)*(sn+1))]
+            mu_q[i] = joint[i].q[mu_index]
             #mu[i] = (D[0, i] + D[1, i])/2 # initialize mean vector
-            sig_q[i] = abs(0.05*mu_q[i]+0.00001) # initialize std vector
-            mu_qd[i] = joint[i].qd[math.floor(traj_steps/(sample_num+1)*(sn+1))]
+            #sig_q[i] = abs(0.05*mu_q[i]+0.00001) # initialize std vector
+            sig_q[i] = abs(0.05*mu_q[i]+0.00001)
+            mu_qd[i] = joint[i].qd[mu_index]
             #mu[i] = (D[0, i] + D[1, i])/2 # initialize mean vector
-            sig_qd[i] = abs(0.05*mu_qd[i]+0.00001) # initialize std vector
-            mu_qdd[i] = joint[i].qdd[math.floor(traj_steps/(sample_num+1)*(sn+1))]
+            #sig_qd[i] = abs(0.05*mu_qd[i]+0.00001) # initialize std vector
+            sig_qd[i] = abs(0.05*mu_qd[i]+0.00001)
+            mu_qdd[i] = joint[i].qdd[mu_index]
             #mu[i] = (D[0, i] + D[1, i])/2 # initialize mean vector
-            sig_qdd[i] = abs(0.05*mu_qdd[i]+0.00001) # initialize std vector
+            sig_qdd[i] = abs(0.05*mu_qdd[i]+0.00001)
+            #sig_qdd[i] = abs(0.05*mu_qdd[i]+0.00001) # initialize std vector
 
         print(f'Original joint angle vector:\n{mu_q}\n')
         print(f'Original joint velocity vector:\n{mu_qd}\n')
@@ -172,6 +177,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_steps):
             new_mu_sig_q = kalman_gain(sig_q, var_q_post, mu_q, mu_q_meas)
             mu_q_old = mu_q
             mu_q = new_mu_sig_q[0]
+            #print(mu_q)
             sig_q = new_mu_sig_q[1]
 
             new_mu_sig_qd = kalman_gain(sig_qd, var_qd_post, mu_qd, mu_qd_meas)
@@ -198,7 +204,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_steps):
             #print(assble_qd)-
 
             iter = iter + 1
-        
+        print(assble_q)
         result_q[sn+1, :] = assble_q[0, :]
         result_qd[sn+1, :] = assble_qd[0, :]
         result_qdd[sn+1, :] = assble_qdd[0, :]
@@ -218,11 +224,11 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_steps):
     return result_q, result_qd, result_qdd, time_vec, joint
 
 
+
+
 """
-
-
 def evaluate_plot(joint_num):
-    result_assemble = heuristic_kalman(50, 5, np.array([[0, 0, 0, 0, 0, 0], [0.0003, 5, 6, 8, 20, 10]]), 0, 0, 6, 6, 20)
+    result_assemble = heuristic_kalman(50, 5, np.array([[0, 0, 0, 0, 0, 0], [0.0003, 5, 6, 8, 20, 10]]), 0, 0, 6, 6, 2)
     result_q = result_assemble[0]
     result_qd = result_assemble[1]
     result_qdd = result_assemble[2]

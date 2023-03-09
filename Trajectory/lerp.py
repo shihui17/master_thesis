@@ -26,18 +26,18 @@ t_val = np.linspace(x1, x2, 10)
 
 qdd_sample = np.zeros(10)
 qdd_sample = [lerp_func(x1, x2, y1, y2, t) for t in t_val]
-print(qdd_sample)
-print(lerp_func_integral(x1, x2, y1, y2, 0.8, 1.16694377))
+#print(qdd_sample)
+#print(lerp_func_integral(x1, x2, y1, y2, 0.8, 1.16694377))
 qd_sample = [lerp_func_integral(x1, x2, y1, y2, t, 1.16694377) for t in t_val]
-print(qd_sample)
+#print(qd_sample)
 
 #plt.plot(t_val, qd_sample)
 #plt.xlim(left = 0)
 ##plt.ylim(bottom = 0)
-plt.show()
+#plt.show()
 
-print(lerp_func_double_integral(x1, x2, y1, y2, 0.8, 1.16694377, 0.75773109))
-print(integrate.simpson(qd_sample, t_val)+0.75773109)
+#print(lerp_func_double_integral(x1, x2, y1, y2, 0.8, 1.16694377, 0.75773109))
+#print(integrate.simpson(qd_sample, t_val)+0.75773109)
 #print(integrate.simpson(qdd_sample, t_val)+1.16694377)
 
 #k = (y2 - y1)/(x2 - x1)
