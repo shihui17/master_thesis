@@ -95,21 +95,36 @@ print(energy_og)
 energy_opt = simpson(power_val, t_val)
 print(energy_opt)
 
+"""
 for j in range(6):
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout="constrained")
-    ax1.plot(t_val, q_graph[j, :])
-    ax1.plot(time_og, q_og[j, :])
+    fig, (ax1, ax2) = plt.subplots(2, 1, layout="constrained")
+    ax1.plot(t_val, q_graph[j, :], label='optimized trajectory')
+    ax1.plot(time_og, q_og[j, :], label='original trajectory')
+    ax1.set_xlabel('Travel Time in s')
+    ax1.set_ylabel('joint angle in rad')
 
-    ax2.plot(t_val, qd_graph[j, :])
-    ax2.plot(time_og, qd_og[j, :])
+    ax2.plot(t_val, qd_graph[j, :], label='optimized trajectory')
+    ax2.plot(time_og, qd_og[j, :], label='original trajectory')
+    ax2.set_xlabel('Travel Time in s')
+    ax2.set_ylabel('joint velocity in rad/s')
+"""
+for j in range(6):
 
-    ax3.plot(t_val, qdd_graph[j, :])
-    ax3.plot(time_og, qdd_og[j, :])
+    plt.xlim([0, 2])
+    plt.plot(t_val, qd_graph[j, :], label='optimized trajectory')
+    plt.plot(time_og, qd_og[j, :], label='original trajectory')
+    plt.xlabel('Travel Time in s')
+    plt.ylabel('joint velocity in rad/s')
+    plt.title(f'Velocity profile of Joint {j+1}')
+    plt.legend()
+    plt.show()
 
-
-
-plt.plot(t_val, power_val)
-plt.plot(time_og, power_og_val)
+plt.plot(t_val, power_val, label='optimized power')
+plt.plot(time_og, power_og_val, label='original power')
+plt.xlabel('Travel Time in s')
+plt.ylabel('Power Output in W')
+plt.title(f'Robot Power Output')
+plt.legend()
 plt.show()
 
 

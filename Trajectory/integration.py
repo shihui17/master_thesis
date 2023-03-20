@@ -319,14 +319,14 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
                 for z in range(6):
                     if z == 1:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -80 if sign_array[z] > 0 else 80
+                            coeff[z] = -160 if sign_array[z] > 0 else 160
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 80 if sign_array[z] < 0 else -80
+                            coeff[z] = 160 if sign_array[z] < 0 else -160
                     elif z == 0:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -80 if sign_array[z] > 0 else 80
+                            coeff[z] = -10 if sign_array[z] > 0 else 10
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 80 if sign_array[z] < 0 else -80
+                            coeff[z] = 10 if sign_array[z] < 0 else -10
                     elif z == 2:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
                             coeff[z] = -50 if sign_array[z] > 0 else 40
@@ -334,19 +334,19 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
                             coeff[z] = 40 if sign_array[z] < 0 else -50       
                     elif z == 4:                
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -80 if sign_array[z] > 0 else 40
+                            coeff[z] = -30 if sign_array[z] > 0 else 30
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 40 if sign_array[z] < 0 else -80                         
+                            coeff[z] = 30 if sign_array[z] < 0 else -30                         
                     elif z == 5:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = 50 if sign_array[z] > 0 else -90
+                            coeff[z] = 90 if sign_array[z] > 0 else -90
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = -90 if sign_array[z] < 0 else 50
+                            coeff[z] = -90 if sign_array[z] < 0 else 90
                     else: 
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -80 if sign_array[z] > 0 else 80
+                            coeff[z] = -20 if sign_array[z] > 0 else 20
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 80 if sign_array[z] < 0 else -80
+                            coeff[z] = 20 if sign_array[z] < 0 else -20
                 #print(f'debug: penalty term{coeff * (sign_array * delta_q**2)}')
                 cost_total_intv[i] = (energy_total_intv + (np.linalg.norm(coeff * (sign_array * delta_q**2), 1))**2, i)
                 #print(energy_val[i])
@@ -422,6 +422,11 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
     print(result_qdd)
     #print(t_ref)
     print(f'Optimization ended.\nOriginal energy consumption of the given trajectory is: {energy_og_total} J.\nTotal energy consumption of the optimizied trajectory is: {energy_total} J.\n')
+
+    np.savetxt("result_q_int.txt", result_q)
+    np.savetxt("result_qd_int.txt", result_qd)
+    np.savetxt("result_qdd_int.txt", result_qdd)
+    np.savetxt("time_vec_int.txt", time_vec)    
 
     return result_q, result_qd, result_qdd, time_vec, joint
 

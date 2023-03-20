@@ -77,32 +77,10 @@ print(rdr[0].q)
 
 from lerp import *
 
-qdd = np.array([[-1.76714587e+00, -2.94524311e+00,  2.94524311e+00, -2.35619449e+00, -2.94524311e+00, -5.89048623e-01],
-                [-8.83573391e-01, -1.47262158e+00,  2.06556155e+00, -1.17809990e+00, -1.47262188e+00, -5.25396973e-01],
-                [-1.37743004e+00, -1.47262156e+00,  4.02678813e+00, -3.53429156e+00, -4.41786467e+00, -6.85241066e-01],
-                [-1.06081292e-06, -1.42771274e-07,  1.60353320e-06, -4.52318512e-06, -9.48333337e-08, -1.08932988e-05],
-                [-6.33714154e-09, -4.88211313e-09, -8.73540898e-08, -9.91883478e-08, -5.37750218e-08, -6.49061527e-08],
-                [ 8.83573215e-01,  1.47262181e+00, -4.41786387e+00,  1.79105292e+00,  1.47263890e+00,  6.05149017e-01],
-                [ 8.83573292e-01,  1.47262185e+00, -1.47262285e+00,  2.48478931e+00,  4.41785654e+00,  5.11819288e-01]])
-
-qd = np.array([[-0.,         -0.,          0.,         -0.,         -0.,         -0.,       ],
-               [-0.37867418, -0.63112353,  0.71582924, -0.5048992,  -0.63112357, -0.15920651],
-               [-0.70167467, -1.05187255,  1.5861649,  -1.17809798, -1.47262165, -0.3321548 ],
-               [-0.89845054, -1.26224708,  2.16142058, -1.68299742, -2.10374519, -0.43004794],
-               [-0.89845069, -1.2622471,   2.1614208,  -1.68299808, -2.10374521, -0.43004951],
-               [-0.77222595, -1.05187255,  1.53029737, -1.42713339, -1.89336823, -0.34359966],
-               [-0.51977645, -0.63112346,  0.68879927, -0.81629878, -1.05186888, -0.18403276]])
-
-q = np.array([[ 1.57079633,  1.04719755,  0.52359878,  0.52359878,  1.04719755,  0.52359878],
- [ 1.51068932,  0.94701921,  0.63184432,  0.44345607,  0.94701921,  0.50042198],
- [ 1.35971334,  0.7065912 ,  0.94735895 , 0.21905642,  0.66651984,  0.43131488],
- [ 1.12175376,  0.36598485,  1.51012141, -0.21371427,  0.12555679,  0.31776735],
- [ 0.86505357,  0.00534283,  2.12767019, -0.6945708,  -0.47551326,  0.19489621],
- [ 0.62037478, -0.33526353,  2.685112,   -1.15105932, -1.05654742,  0.08025824],
- [ 0.43580301, -0.57569153,  2.98209015, -1.47626893, -1.49733107,  0.00551708]])
-
-time = np.array([0.,         0.28571429, 0.57142857, 0.85714286, 1.14285714, 1.42857143,
- 1.71428571])
+q = np.loadtxt("result_q_int.txt")
+qd = np.loadtxt("result_qd_int.txt")
+qdd = np.loadtxt("result_qdd_int.txt")
+time = np.loadtxt("time_vec_int.txt")
 
 qdd_plot = []
 t_list = []
@@ -233,5 +211,66 @@ for j_num in range(6):
 
     for a, b in zip(time, np.round(qdd[:, j_num], 3)):
         plt.text(a, b, str(b))
+
+plt.show()
+def poly4_interp(x):
+    A_matrix = np.array([[x**4, x**3, x**2, x, 1], [4 * x**3, 3 * x**2, 2 * x, 1, 0], [12 * x**2, 6 * x, 2, 0, 0]])
+    return A_matrix
+
+A_matrix1 = poly4_interp(time[-1])
+print(A_matrix1)
+A_matrix2 = poly4_interp(2)
+A_matrix2 = np.delete(A_matrix2, 2, 0)
+print(A_matrix2)
+A_matrix_whole = np.vstack((A_matrix1, A_matrix2))
+print(A_matrix_whole)
+
+B_vec = np.array([q[-1, 0], qd[-1, 0], qdd[-1, 0], 1.570796326794895670e+00, 0])
+print(B_vec)
+
+sol = np.linalg.solve(A_matrix_whole, B_vec)
+print(sol)
+
+def poly4(a, b, c, d, e, x):
+    func = a * x**4 + b * x**3 + c * x**2 + d * x + e
+    return func
+
+tt = np.linspace(time[-1], 2, num=100)
+yt = [poly4(sol[0], sol[1], sol[2], sol[3], sol[4], t) for t in tt]
+
+def poly4_d(a, b, c, d, x):
+    func = 4 * a * x**3 + 3* b * x**2 + 2 * c * x + d
+    return func
+
+yt_d = [poly4_d(sol[0], sol[1], sol[2], sol[3], t) for t in tt]
+
+def poly4_dd(a, b, c, x):
+    func = 12 * a * x**2 + 6* b * x + 2 * c
+    return func
+
+yt_dd = [poly4_dd(sol[0], sol[1], sol[2], t) for t in tt]
+
+t_j1 = np.concatenate((t_list, tt))
+q_j1 = np.concatenate((q_total[0], yt))
+
+qd_j1 = np.concatenate((qd_total[0], yt_d))
+qdd_j1 = np.concatenate((qdd_total[0], yt_dd))
+
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
+
+fig.suptitle(f'Trajecotry of joint 1', fontsize=16)
+ax1.plot(joint[6], joint[0].q, color='blue', label='Original angle')
+ax1.plot(time, q[:, 0], 'r+', label='Optimized angle')
+ax1.plot(t_j1, q_j1, color='green', label='Optimized angle profile')
+ax1.legend()
+
+ax2.plot(joint[6], joint[0].qd, color='blue', label='Original velocity')
+ax2.plot(time, qd[:, 0], 'r+', label='Optimized velocity')
+ax2.plot(t_j1, qd_j1, color='green', label='Optimized velocity profile')
+ax2.legend()
+ax3.plot(joint[6], joint[0].qdd, color='blue', label='Original acceleration')
+ax3.plot(time, qdd[:, 0], 'r+', label='Optimized acceleration')
+ax3.plot(t_j1, qdd_j1, color='green', label='Optimized accel. profile')
+ax3.legend()
 
 plt.show()
