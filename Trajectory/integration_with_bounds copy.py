@@ -11,6 +11,7 @@ from scipy.interpolate import interp1d
 from tolerance import *
 from lerp import *
 from scipy.stats import truncnorm
+import CubicEquationSolver
 
 def kalman_gain(sig, var_post, mu, mu_meas):
     """
@@ -34,11 +35,12 @@ def kalman_gain(sig, var_post, mu, mu_meas):
     mu_post = mu + np.multiply(L, (mu_meas - mu)) # post mean
     P = np.square(sig) - np.multiply(L, np.square(sig)) # post covariance
     s = np.min([1, np.mean(np.sqrt(var_post))])
-    a = 0.8 * (s**2 / (s**2 + np.max(P))) # slowdown factor to slow down the convergence, coefficient (in this case 0.6) can vary (see HKA book)
+    a = 0.7 * (s**2 / (s**2 + np.max(P))) # slowdown factor to slow down the convergence, coefficient (in this case 0.6) can vary (see HKA book)
     #print(P)
     #print(var_q_post)
     sig_new = sig + a * (np.sqrt(P) - sig) # set new std. deviation
     mu_new = mu_post # set new mean
+    #print(f'new mean: {mu_new}')
     
     return mu_new, sig_new
 
@@ -94,13 +96,15 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
     for i in range(6): # generate tolerance band for all joints
         angle = joint[i].q
         velocity = joint[i].qd
-        upper = create_tolerance_bands(angle, velocity, time, 0.25, "upper")
+        upper = create_tolerance_bands(angle, velocity, time, 0.95, "upper")
         #print(upper[1])
-        lower = create_tolerance_bands(angle, velocity, time, 0.25, "lower")
+        lower = create_tolerance_bands(angle, velocity, time, 0.95, "lower")
         tolerance_band[0, :, i] = upper[1]
         tolerance_band[1, :, i] = lower[1]
 
-    time_vec = np.zeros(sample_num+2)
+    t_accel = lower[2]
+    t_brake = lower[3]
+    time_vec = np.round(np.array([0, t_accel/2, t_accel-0.05, t_accel+(t_brake-t_accel)/3, t_accel+2*(t_brake-t_accel)/3, t_brake+0.05, t_brake+t_accel/2]), 2)
     ctr = 0
     dt = joint[6][1] - joint[6][0]
     energy_og_total = 0 # accumulated energy consumption along unoptimized trajectory
@@ -113,14 +117,15 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
         result_qdd[0, i] = joint[i].qdd[0]
     #print(result_qdd)
 
-    for sn in range(sample_num): # now iterate through all sample points
+    for sn, time_ind in enumerate(range(6)): # now iterate through all sample points
 
         flag = False
         energy_og = 0 # initialize pre-optimization energy consumption
         iter = 0 # initialize iteration counter
-        t2 = traj_time/(sample_num+1)*(sn+1) # current sample point
-        time_vec[sn+1] = t2 # current sample point
-        t1 = time_vec[sn] # previous sample point, we are at sample point sn+1 right now, meaning previous sample point is sn
+        #t2 = traj_time/(sample_num+1)*(sn+1) # current sample point
+        #time_vec[sn+1] = t2 # current sample point
+        t1 = time_vec[time_ind] # previous sample point, we are at sample point sn+1 right now, meaning previous sample point is sn
+        t2 = time_vec[time_ind+1]
         q_ref = np.zeros(6) # initialize reference joint angle array, where original joint angles at sample point sn are stored
         ref_index = np.where(np.round(joint[6], 2) == np.round(t2, 2))  
 
@@ -128,8 +133,8 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
             q_ref[ii] = joint[ii].q[ref_index[0]]
 
         #print(f'wtf am i printing ????{time_vec}')
-        mu_index_pre = math.floor(200/(sample_num+1)*sn)
-        mu_index = math.floor(200/(sample_num+1)*(sn+1))
+        #mu_index_pre = math.floor(200/(sample_num+1)*sn)
+        #mu_index = math.floor(200/(sample_num+1)*(sn+1))
         #print(f'TEST!: {time_vec}')
         #print(f'Calculating optimized trajectory at sample point {sn}, corresponding to trajectory time {traj_steps/(sample_num+1)*(sn+1)}\n')    
 
@@ -171,10 +176,10 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
             mu_qdd[i] = joint[i].qdd[ref_index]
             #mu[i] = (D[0, i] + D[1, i])/2 # initialize mean vector
             if mu_qdd[i] == 0:
-                sig_qdd[i] = 30 # initialize std vector, hard coded for now
+                sig_qdd[i] = 1.33 # initialize std vector, hard coded for now
                 flag = True
             else:
-                sig_qdd[i] = abs(20*mu_qdd[i])
+                sig_qdd[i] = 1.33 # abs(1*mu_qdd[i])
             
         print(f'Debugging: sigma through initialisation: {sig_qdd[i]}\n')
 
@@ -199,44 +204,98 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
             q_sample = np.zeros((6, width))
             #print(f'current sig: {sig_qdd}')
             for joint_num in range(6): # generate gaussian destribution for acceleration of each joint (N random values), results written in assble_qdd (an Nx6 matrix)
+                if result_qdd[0, joint_num] > 0:
+                    flag = True # True -> positive profile, angle increases
+                else:
+                    flag = False # False -> negative profile, angle decreases
                 for i in range(N):
+
                     identifier = 0
                     while True:
 
                         identifier += 1
-                        if identifier > N*2:
-                            print(f'Tracking (sn = {sn}): we are (stuck) at joint {joint_num} with joint angle {q2}, qdd2 {qdd2}, sig = {sig_qdd[joint_num]}')
+                        if N*2 < identifier < N*2+2:
+                            print(f'Tracking (sn = {sn}): we are (stuck) at joint {joint_num} with joint angle {q2}, qdd2 {qdd2}, sig = {sig_qdd[joint_num]}, mu = {mu_qdd[joint_num]}')
                             print(f'lower bound = {lower_bound[joint_num]}, upper bound = {upper_bound[joint_num]}')
-                            print(f'params for numerical integration: result_q = {result_q[sn, joint_num]}, result_qd = {result_qd[sn, joint_num]}, result_qdd = {result_qdd[sn, joint_num]}\n')
-                            lb = (-10 - mu_qdd[joint_num]) / sig_qdd[joint_num]
-                            ub = (10 - mu_qdd[joint_num]) / sig_qdd[joint_num]
-                            print(f'sig = {sig_qdd[joint_num]}')
+                            #print(f'params for numerical integration: result_q = {result_q[sn, joint_num]}, result_qd = {result_qd[sn, joint_num]}, result_qdd = {result_qdd[sn, joint_num]}\n')
+                            print(f'iteration: {iter}')
+                            #print(f'post acceleration matrix post_qdd = \n{post_qdd}\nwith a variance of {var_qdd_post}\nmean = {mu_qdd_meas}\n\n')
+                            x2 = t2
+                            x1 = t1
+                            y2 = qdd2
+                            y1 = result_qdd[sn, joint_num]
+                            k = (y2 - y1)/(x2 - x1)
+                            qd0 = result_qd[sn, joint_num]
+                            q0 = result_q[sn, joint_num]
+                            xx = 1/6 * x2**3 - 1/2 * x1 * x2**2 + 1/2 * x1**2 * x2 - 1/6 * x1**3
+                            bb = 1/2 * y1 * x2**2 + qd0 * x2 - x1 * y1 * x2 - 0.5 * y1 * x1**2 - qd0 * x1 + x1 * y1 * x1 + q0
+                            yy = (lower_bound[joint_num] + upper_bound[joint_num]) / 2
+                            kk = (yy - bb) / xx
+                            qdd2 = kk * (x2 - x1) + y1
+                            print(f'corrected qdd2 {qdd2}')
+                            print(f'bound set at {0.6*joint[joint_num].qdd[ref_index]}')
+                            print(f'{t1}, {t2}, {y1}, {qdd2}, {t2}, {qd0}, {q0}')
+                            qt = lerp_func_double_integral(t1, t2, result_qdd[sn, joint_num], qdd2, t2, result_qd[sn, joint_num], result_q[sn, joint_num])
+                            #print(f'why is bound not working {0.6*mu_qdd[joint_num]}')
+                            #mu_qdd[joint_num] = qdd2
+                            #print(f'{qt} = {yy} ??')
+                            """
+                            if q2 > upper_bound[joint_num]:
+                                x2 = t2
+                                x1 = t2
+                                y2 = qdd2
+                                y1 = result_qdd[sn, joint_num]
+                                k = (y2 - y1)/(x2 - x1)
+                                qd0 = result_qd[sn, joint_num]
+                                q0 = result_q[sn, joint_num]
+                                a2 = qd0 - 0.5 * k * x1**2 + k * x1 * x1 - y1 * x1
+                                C = q0 - (1/6 * k * x1**3 - 0.5 * k * x1**3 + 0.5 * k * y1 * x1**2 + a2 * x1)
+                                CubicEquationSolver.solve(1/6*k, -0.5*k*x1+0.5*y1, a2, C)
+                                lb = (-5 - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                                ub = 0 / sig_qdd[joint_num]
+                            elif q2 < lower_bound[joint_num]:
+                                lb = 0
+                                ub = (5 - mu_qdd[joint_num]) / sig_qdd[joint_num]      
+                            """                          
+                            #print(f'sig = {sig_qdd[joint_num]}')
                             
                         
-                        elif mu_qdd[joint_num] < 0 and flag == False: 
-                            
-                            lb = (max(1.8 * mu_qdd[joint_num], -1.8 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                        elif mu_qdd[joint_num] < 0:
+                            lb = (-10 - 0) / sig_qdd[joint_num]
+                            #lb = (max(1.5 * mu_qdd[joint_num], -1.5 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            ub = (10 - 0) / sig_qdd[joint_num]
+                            #lb = (-10 - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            #lb = (max(1.5 * mu_qdd[joint_num], -1.5 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            #ub = (10 - mu_qdd[joint_num]) / sig_qdd[joint_num]
                             #print(f'1.5 * mu_qdd[{i}] = {1.5*mu_qdd[i]}; the other is {-1.5 * abs(result_qdd[0, i])}\n')
                             #print(f'lb = {lb}')
-                            ub = (min(0.2 * mu_qdd[joint_num], -0.2 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            #ub = (min(0.8 * mu_qdd[joint_num], -0.8 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
                             #assble_qdd[:, i] = np.transpose(s_qdd_trunc.rvs(size=N))
                             a = 0
                             #print(a)
-                        elif mu_qdd[joint_num] > 0 and flag == False:
-                            lb = (max(0.8 * mu_qdd[joint_num], 0.8 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
-                            ub = (min(1.8 * mu_qdd[joint_num], 1.8 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                        elif mu_qdd[joint_num] > 0:
+                            lb = (-10 - 0) / sig_qdd[joint_num]
+                            #lb = (max(1.5 * mu_qdd[joint_num], -1.5 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            ub = (10 - 0) / sig_qdd[joint_num]                            
+                            #lb = (-10 - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            #lb = (max(0.8 * mu_qdd[joint_num], 0.8 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            #ub = (10 - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            #ub = (min(1.5 * mu_qdd[joint_num], 1.5 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
                             a = 1
                             #print(a)
                         else:
-                            lb = (-2 - mu_qdd[joint_num]) / sig_qdd[joint_num]
-                            ub = (2 - mu_qdd[joint_num]) / sig_qdd[joint_num]
-
+                            #lb = (-10 - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            #ub = (10 - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            lb = (-10 - 0) / sig_qdd[joint_num]
+                            #lb = (max(1.5 * mu_qdd[joint_num], -1.5 * abs(result_qdd[0, joint_num])) - mu_qdd[joint_num]) / sig_qdd[joint_num]
+                            ub = (10 - 0) / sig_qdd[joint_num]
                         
                         
                         #lb = (-5 - mu_qdd[joint_num]) / sig_qdd[joint_num]
                         #ub = (5 - mu_qdd[joint_num]) / sig_qdd[joint_num]
                         #print(f'sig = {sig_qdd[joint_num]}')
-                        s_qdd_trunc = truncnorm(lb, ub, loc=mu_qdd[joint_num], scale = sig_qdd[joint_num])
+                        s_qdd_trunc = truncnorm(lb, ub, loc=0, scale = sig_qdd[joint_num])                        
+                        #s_qdd_trunc = truncnorm(lb, ub, loc=mu_qdd[joint_num], scale = sig_qdd[joint_num])
                         qdd2 = s_qdd_trunc.rvs(size=1)
                         
                         #qdd2 = np.random.normal(mu_qdd[joint_num], sig_qdd[joint_num])
@@ -255,6 +314,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
                     #print(f'lower bound {lower_bound}')
                     #print(assble_q)
             # Linear interpolation between the previous and the current acceleration
+            #print(assble_qdd_temp)
             width = 10
             qdd_sample = np.zeros((6, width))
             qd_sample = np.zeros((6, width))
@@ -421,7 +481,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
             #print(iter)
             iter = iter + 1
 
-        print(f'post acceleration matrix post_qdd = \n{post_qdd}\nwith a variance of {var_qdd_post}\nmean = {mu_qdd_meas}\n\n')
+        #print(f'post acceleration matrix post_qdd = \n{post_qdd}\nwith a variance of {var_qdd_post}\nmean = {mu_qdd_meas}\n\n')
         t_ref.append(t_val)
         #print(sorted_energy_val)
         #print(assble_qdd)

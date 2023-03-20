@@ -16,21 +16,6 @@ def lerp_func_double_integral(x1, x2, y1, y2, x, qd0, q0):
     a2 = qd0 - 0.5 * k * x1**2 + k * x1 * x1 - y1 * x1
     return 1/6 * k * x**3 - 0.5 * k * x1 * x**2 + 0.5 * y1 * x**2 + a2 * x - (1/6 * k * x1**3 - 0.5 * k * x1 * x1**2 + 0.5 * y1 * x1**2 + a2 * x1) + q0
 
-x1 = 0.4
-x2 = 0.8
-y1 = 2.88947575
-y2 = -0.06607621
-#print(lerp_func_double_integral(x1, x2, y1, y2, 1.2, 1.73162368, 2.07561222))
-
-t_val = np.linspace(x1, x2, 10)
-
-qdd_sample = np.zeros(10)
-qdd_sample = [lerp_func(x1, x2, y1, y2, t) for t in t_val]
-#print(qdd_sample)
-#print(lerp_func_integral(x1, x2, y1, y2, 0.8, 1.16694377))
-qd_sample = [lerp_func_integral(x1, x2, y1, y2, t, 1.16694377) for t in t_val]
-#print(qd_sample)
-
 #plt.plot(t_val, qd_sample)
 #plt.xlim(left = 0)
 ##plt.ylim(bottom = 0)

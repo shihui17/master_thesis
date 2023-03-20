@@ -319,24 +319,34 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
                 for z in range(6):
                     if z == 1:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -50 if sign_array[z] > 0 else 50
+                            coeff[z] = -80 if sign_array[z] > 0 else 80
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 50 if sign_array[z] < 0 else -50
-                    elif z == 0 or z == 2 or z == 4:
+                            coeff[z] = 80 if sign_array[z] < 0 else -80
+                    elif z == 0:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -40 if sign_array[z] > 0 else 40
+                            coeff[z] = -80 if sign_array[z] > 0 else 80
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 40 if sign_array[z] < 0 else -40
+                            coeff[z] = 80 if sign_array[z] < 0 else -80
+                    elif z == 2:
+                        if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
+                            coeff[z] = -50 if sign_array[z] > 0 else 40
+                        else: # negative trapeze, q_opt < q_ref to be encouraged
+                            coeff[z] = 40 if sign_array[z] < 0 else -50       
+                    elif z == 4:                
+                        if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
+                            coeff[z] = -80 if sign_array[z] > 0 else 40
+                        else: # negative trapeze, q_opt < q_ref to be encouraged
+                            coeff[z] = 40 if sign_array[z] < 0 else -80                         
                     elif z == 5:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -0.5 if sign_array[z] > 0 else 0
+                            coeff[z] = 50 if sign_array[z] > 0 else -90
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 0 if sign_array[z] < 0 else -0.5
+                            coeff[z] = -90 if sign_array[z] < 0 else 50
                     else: 
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -10 if sign_array[z] > 0 else 10
+                            coeff[z] = -80 if sign_array[z] > 0 else 80
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 10 if sign_array[z] < 0 else -10
+                            coeff[z] = 80 if sign_array[z] < 0 else -80
                 #print(f'debug: penalty term{coeff * (sign_array * delta_q**2)}')
                 cost_total_intv[i] = (energy_total_intv + (np.linalg.norm(coeff * (sign_array * delta_q**2), 1))**2, i)
                 #print(energy_val[i])
@@ -368,13 +378,17 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
 
             mu_qdd_meas = np.mean(post_qdd, 0)
             var_qdd_post = np.var(post_qdd, 0)
-            #print(f'post acceleration matrix post_qdd = {post_qdd}\nwith a variance of {var_qdd_post}\nStd.Dev = {sig_qdd}\n\n')
+            
             new_mu_sig_qdd = kalman_gain(sig_qdd, var_qdd_post, mu_qdd, mu_qdd_meas)
             mu_qdd_old = mu_qdd
             mu_qdd = new_mu_sig_qdd[0]
             sig_qdd = new_mu_sig_qdd[1]
             #print(f'new mean: {mu_qdd}')
             #print(f'new variance: {sig_qdd}')
+
+            if all(i < 1e-6 for i in var_qdd_post) == True:
+                print(f'exited loop at iter = {iter}')
+                break
             iter = iter + 1
 
         t_ref.append(t_val)
@@ -382,7 +396,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
         #print(assble_qdd)
         #print(assble_q)
         result_q[sn+1, :] = assble_q[num_array[0], :]      
-        #print(test_qd)
+        print(f'post acceleration matrix post_qdd = {post_qdd}\nwith a variance of {var_qdd_post}\nStd.Dev = {sig_qdd}\n\n')#print(test_qd)
         result_qd[sn+1, :] = assble_qd[num_array[0], :]
         result_qdd[sn+1, :] = assble_qdd[num_array[0], :]
         energy_total = energy_total + energy_val[num_array[0]]['Energy']

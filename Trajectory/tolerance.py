@@ -15,9 +15,9 @@ from traj import *
 # to generalise, define the following function:
 
 joint_data = generate_traj_time(2)
-angle = joint_data[1].q
-velocity = joint_data[1].qd
-accel = joint_data[1].qdd
+angle = joint_data[3].q
+velocity = joint_data[3].qd
+accel = joint_data[3].qdd
 time = joint_data[6]
 
 def create_tolerance_bands(angle, velocity, time, width, upper_lower):
@@ -37,13 +37,23 @@ def create_tolerance_bands(angle, velocity, time, width, upper_lower):
     qd0 = 0
 
     if upper_lower in allowed:
+        q11 = angle[0] + (angle[i_accel] - angle[0]) * width
+        q_l = angle[0] + (angle[i_accel] - angle[0]) * width
+        q12 = 2 * angle[i_accel] - q_l
         if upper_lower == "lower":
-            q1 = angle[0] + (angle[i_accel] - angle[0]) * width # generate a new angle for lower bound
-            print(f'Test q1 lower = {q1}')
+            if angle[i_accel] > angle[0]:
+                q1 = q11 # generate a new angle for lower bound
+                #print(f'Test q1 lower = {q1}')
+            else:
+                q1 = q12
+                #print(f'Test q1 lower = {q1}')
         elif upper_lower == "upper":
-            q_l = angle[0] + (angle[i_accel] - angle[0]) * width # angle for lower bound
-            q1 = 2 * angle[i_accel] - q_l # flip it around angle[i_accel] to get upper bound
-            print(f'Test q1 upper = {q1}')
+            if angle[i_accel] > angle[0]:
+                q1 = q12
+                #print(f'Test q1 upper = {q1}')
+            else:
+                q1 = q11
+                #print(f'Test q1 upper = {q1}')
     else:
         raise ValueError(f"Invalid string passed in upper_lower")
     qd1 = velocity[i_accel] # assume unchanged velocity at t_accel
@@ -72,6 +82,8 @@ def create_tolerance_bands(angle, velocity, time, width, upper_lower):
 
     t_sample2 = np.linspace(t0, t1, int(100*(t1-t0)+1))
     q_spline2 = [linear_k(qd0, t0, q0, t) for t in t_sample2]
+    t_sample2 = t_sample2[1: ]
+    q_spline2 = q_spline2[1: ]
 
     # braking
 
@@ -91,12 +103,64 @@ def create_tolerance_bands(angle, velocity, time, width, upper_lower):
     cubic_spline2 = CubicHermiteSpline(x, y, dydx)
     t_sample3 = np.linspace(t0, t1, int(100*(t1-t0)+1))
     q_spline3 = cubic_spline2(t_sample3)
+    t_sample3 = t_sample3[1:]
+    q_spline3 = q_spline3[1:]
+
+    
 
     t_total = np.concatenate((t_sample, t_sample2, t_sample3))
     angle_bound = np.concatenate((q_spline, q_spline2, q_spline3))
 
-    return t_total, angle_bound
+    return t_total, angle_bound, t_accel, t_brake
 
+
+upper = create_tolerance_bands(angle, velocity, time, 0.5, "upper")
+lower = create_tolerance_bands(angle, velocity, time, 0.5, "lower")
+#print(upper[1])
+"""
+#print(lower[1])
+joint = generate_traj_time(2)
+tolerance_band = np.zeros((2, 100*2+1, 6))
+upper_bound = np.zeros(6)
+for i in range(6): # generate tolerance band for all joints
+    angle = joint[i].q
+    velocity = joint[i].qd
+    upper = create_tolerance_bands(angle, velocity, time, 0.5, "upper")
+    #print(upper[1])
+    lower = create_tolerance_bands(angle, velocity, time, 0.5, "lower")
+    tolerance_band[0, :, i] = upper[1]
+    tolerance_band[1, :, i] = lower[1]
+
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
+ax1.plot(time, joint[0].q, label='original joint1', color='red')
+ax1.plot(upper[0], tolerance_band[0, :, 0], label='tolerance band', linestyle='dashed', color='green')
+ax1.plot(upper[0], tolerance_band[1, :, 0], linestyle='dashed', color='green')
+ax1.legend()
+ax2.plot(time, joint[1].q, label='original joint2', color='red')
+ax2.plot(upper[0], tolerance_band[0, :, 1], label='tolerance band', linestyle='dashed', color='green')
+ax2.plot(upper[0], tolerance_band[1, :, 1], linestyle='dashed', color='green')
+ax2.legend()
+ax3.plot(time, joint[2].q, label='original joint3', color='red')
+ax3.plot(upper[0], tolerance_band[0, :, 2], label='tolerance band', linestyle='dashed', color='green')
+ax3.plot(upper[0], tolerance_band[1, :, 2], linestyle='dashed', color='green')
+ax3.legend()
+
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
+ax1.plot(time, joint[3].q, label='original joint1', color='red')
+ax1.plot(upper[0], tolerance_band[0, :, 3], label='tolerance band', linestyle='dashed', color='green')
+ax1.plot(upper[0], tolerance_band[1, :, 3], linestyle='dashed', color='green')
+ax1.legend()
+ax2.plot(time, joint[4].q, label='original joint2', color='red')
+ax2.plot(upper[0], tolerance_band[0, :, 4], label='tolerance band', linestyle='dashed', color='green')
+ax2.plot(upper[0], tolerance_band[1, :, 4], linestyle='dashed', color='green')
+ax2.legend()
+ax3.plot(time, joint[5].q, label='original joint3', color='red')
+ax3.plot(upper[0], tolerance_band[0, :, 5], label='tolerance band', linestyle='dashed', color='green')
+ax3.plot(upper[0], tolerance_band[1, :, 5], linestyle='dashed', color='green')
+ax3.legend()
+
+plt.show()
+"""
 """
 results1 = create_tolerance_bands(angle, velocity, time, 0.5)
 t_total = results1[0]
