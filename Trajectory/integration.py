@@ -14,6 +14,7 @@ from scipy.interpolate import CubicHermiteSpline, BPoly, interp1d
 from scipy.stats import truncnorm
 from scipy.integrate import quad, simpson
 from lerp import *
+from plot_traj import *
 
 
 def kalman_gain(sig, var_post, mu, mu_meas):
@@ -88,6 +89,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
     end_qdd = np.zeros(6)
     debug = 0
     joint = generate_traj_time(traj_time) # generate trapezoidal trajectory with given trajectory time, discretized with 100 time steps, change config in traj.py
+    plot_trajectory(joint)
     u = np.zeros(6) # profile identifier, 1 for positive trapeze, -1 for negative trapeze
 
     for jt in range(6):
