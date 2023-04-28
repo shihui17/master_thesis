@@ -17,12 +17,13 @@ from energy_est import *
 import time as ti
 
 
-def joint_jacobian(jacobian, joint_num, qd):
+def joint_jacobian(jacobian, joint_num, qd, mass_matrix):
 
     joint_vel = jacobian[:, :joint_num+1] @ qd[:joint_num+1]
-    joint_vel_abs = np.linalg.norm(joint_vel[:3], 2)
+    joint_vel = joint_vel[:3]
+    momentum_joint = mass_matrix[joint_num] * joint_vel
 
-    return joint_vel_abs
+    return momentum_joint
 
 angle = np.zeros((201, 6))
 velocity = np.zeros((201, 6))
@@ -62,12 +63,13 @@ for i in range(201):
 
     qd = velocity[i, :]
     #print(velocity[i, :])
-    velocity_cartesian = []
+    velocity_cartesian = np.zeros(3)
     for joint_num in range(6):
-        velocity_cartesian.append(joint_jacobian(jacobian, joint_num, qd))
-    momentum[i] = np.dot(velocity_cartesian, mass)
+        velocity_cartesian = velocity_cartesian + joint_jacobian(jacobian, joint_num, qd, mass)
+        momentum_abs = np.linalg.norm(velocity_cartesian, 2)
+    #momentum[i] = np.dot(velocity_cartesian, mass)
+    print(momentum_abs)
 
-print(momentum)
 
 """        
 poses = Yu.fkine_all([-pi/2, -pi/2, pi/2, -pi/3, -pi/3, 0]) # the pose of each robot joint as SE3

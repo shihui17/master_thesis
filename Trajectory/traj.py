@@ -8,7 +8,7 @@ import spatialgeometry as sg
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from call_tau import *
-
+"""
 def generate_traj(num):
     Yu = rtb.models.DH.Yu()
     q_end = Yu.qa
@@ -20,7 +20,7 @@ def generate_traj(num):
     tg5 = tools.trapezoidal(pi/3, q_end[4], num)
     tg6 = tools.trapezoidal(pi/6, q_end[5], num)
     return tg1, tg2, tg3, tg4, tg5, tg6, t
-
+"""
 
 """
 def generate_traj_time(traj_time):
@@ -39,15 +39,13 @@ def generate_traj_time(traj_time):
 
 def generate_traj_time(traj_time):
     Yu = rtb.models.DH.Yu()
-    q_end = Yu.qa
-    #print(q_end)
     t = np.linspace(0, traj_time, 201)
-    tg1 = tools.trapezoidal(-pi/2, q_end[0], t)
-    tg2 = tools.trapezoidal(-pi/2, q_end[1], t)
-    tg3 = tools.trapezoidal(pi/2, pi, t)
-    tg4 = tools.trapezoidal(-pi/3, q_end[3], t)
-    tg5 = tools.trapezoidal(-pi/3, q_end[4], t)
-    tg6 = tools.trapezoidal(0, q_end[5], t)
+    tg1 = tools.trapezoidal(-pi/2, pi/6, t)
+    tg2 = tools.trapezoidal(-pi/2, pi/2, t)
+    tg3 = tools.trapezoidal(pi/3, -pi, t)
+    tg4 = tools.trapezoidal(-pi/3, pi/2, t)
+    tg5 = tools.trapezoidal(-pi/3, pi/3, t)
+    tg6 = tools.trapezoidal(0, -pi, t)
 
     return tg1, tg2, tg3, tg4, tg5, tg6, t
 
@@ -88,7 +86,7 @@ def eval_power(joint_vec):
 """
 rdr = generate_traj_time(2)
 
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained',)
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
 ax1.plot(rdr[6], np.round(rdr[0].q, 6), label='q1')
 ax1.plot(rdr[6], np.round(rdr[1].q, 6), label='q2')
 ax1.plot(rdr[6], np.round(rdr[2].q, 6), label='q3')
@@ -112,7 +110,7 @@ ax2.legend()
 ax3.plot(rdr[6], np.round(rdr[0].qdd, 6), label='q1')
 ax3.plot(rdr[6], np.round(rdr[1].qdd, 6), label='q2')
 ax3.plot(rdr[6], np.round(rdr[2].qdd, 6), label='q3')
-ax3.plot(rdr[6][0], rdr[2].qdd[0], 'o')
+#ax3.plot(rdr[6][0], rdr[2].qdd[0], 'o')
 ax3.plot(rdr[6], np.round(rdr[3].qdd, 6), label='q4')
 ax3.plot(rdr[6], np.round(rdr[4].qdd, 6), label='q5')
 ax3.plot(rdr[6], np.round(rdr[5].qdd, 6), label='q6')
@@ -123,3 +121,8 @@ ax3.legend()
 
 plt.show()
 """
+#fig1 = plt.figure()
+#fig1 = plt.plot(rdr[6], np.round(rdr[0].q, 6))
+#plt.xlabel('Trajectory Time in s')
+#plt.ylabel('Joint angle in rad')
+#plt.show()
