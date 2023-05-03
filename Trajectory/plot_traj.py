@@ -8,6 +8,7 @@ import spatialgeometry as sg
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from call_tau import *
+from traj import *
 
 def plot_trajectory(rdr):
     
@@ -43,3 +44,5 @@ def plot_trajectory(rdr):
     ax3.set_ylim(bottom=-5, top=5)
     ax3.legend()
     plt.show()
+#traj = generate_traj_time(2, 401)
+#plot_trajectory(traj)

@@ -1,20 +1,7 @@
-import roboticstoolbox as rtb
 import numpy as np
-import math
-from math import pi
-from roboticstoolbox import tools as tools
-import spatialmath as sm
-import spatialgeometry as sg
-import matplotlib as mpl
+import roboticstoolbox as rtb
+from traj import generate_traj_time
 import matplotlib.pyplot as plt
-from call_tau import *
-from scipy.stats import truncnorm
-from scipy.integrate import simpson
-from plot_traj import *
-from traj import *
-from HKA_kalman_gain import *
-from energy_est import *
-import time as ti
 
 
 def joint_jacobian(jacobian, joint_num, qd, mass_matrix):
@@ -25,13 +12,17 @@ def joint_jacobian(jacobian, joint_num, qd, mass_matrix):
 
     return momentum_joint
 
-angle = np.zeros((201, 6))
-velocity = np.zeros((201, 6))
-accel = np.zeros((201, 6))
+angle = np.zeros((401, 6))
+velocity = np.zeros((401, 6))
+accel = np.zeros((401, 6))
 mass = np.array([5.976, 9.572, 4.557, 2.588, 2.588, 1.025])
 Yu = rtb.models.DH.Yu()
-traj = generate_traj_time(2)
-momentum = np.zeros(201)
+traj = generate_traj_time(2, 401)
+#plot_trajectory(traj)
+time = traj[6]
+momentum = np.zeros(401)
+momentum_abs = []
+momentum_matrix = np.zeros((6, 401))
 for j in range(6):
 
     angle[:, j] = traj[j].q
@@ -39,9 +30,10 @@ for j in range(6):
     accel[:, j] = traj[j].qdd
 
 #print(velocity)
-
-for i in range(201):
+for i in range(50):
+    #poses = Yu.fkine_all(np.array([0, 0, 0, 0, 0, 0]))
     poses = Yu.fkine_all(angle[i, :])
+    #print(poses)
     z_axis = []
     pos_vec = []
     translation = []
@@ -49,6 +41,7 @@ for i in range(201):
 
     for pose in poses:
         pose = np.array(pose)
+        #print(pose)
         position = pose @ np.array([0, 0, 0, 1])
         position = position[:3]
         pos_vec.append(position)
@@ -57,20 +50,50 @@ for i in range(201):
         z_axis.append(rotation)
         translation.append(np.cross(rotation, position))
 
+    print(translation)
+    #print(z_axis)
+
     for ii in range(1, 7):
         jacobian[ii-1, :] = np.hstack((translation[ii], z_axis[ii]))
     jacobian = np.transpose(np.round(jacobian, 3))
+    print(jacobian)
 
     qd = velocity[i, :]
     #print(velocity[i, :])
-    velocity_cartesian = np.zeros(3)
+    momentum_cartesian = np.zeros(3)
     for joint_num in range(6):
-        velocity_cartesian = velocity_cartesian + joint_jacobian(jacobian, joint_num, qd, mass)
-        momentum_abs = np.linalg.norm(velocity_cartesian, 2)
+        joint_jacob = joint_jacobian(jacobian, joint_num, qd, mass)
+        joint_jacob_abs = np.linalg.norm(joint_jacob, 2)
+        momentum_matrix[joint_num, i] = joint_jacob_abs
+        momentum_cartesian = momentum_cartesian + joint_jacob
+    momentum_abs.append(np.linalg.norm(momentum_cartesian, 2))
     #momentum[i] = np.dot(velocity_cartesian, mass)
-    print(momentum_abs)
-
-
+#print(momentum_abs)
+#print(len(momentum_abs))
+#print(time)
+#print(max(momentum_abs))
+"""
+plt.plot(time, momentum_abs)
+plt.title('Total Robot Momentum', fontsize=16)
+plt.xlabel(f'Trajectory Time in s', fontsize=10, labelpad=10)
+plt.ylabel('Total robot momentum in kg*m/s', fontsize=10, labelpad=10)
+plt.xticks(fontsize=10)
+plt.yticks(fontsize=10)
+plt.show()
+"""
+"""
+fig, (ax1, ax2) = plt.subplots(2, 1, layout='constrained')
+ax1.plot(time, momentum_abs, label='total')
+ax2.plot(time, momentum_matrix[0, :], label='joint 1')
+ax2.plot(time, momentum_matrix[1, :], label='joint 2')
+ax2.plot(time, momentum_matrix[2, :], label='joint 3')
+ax2.plot(time, momentum_matrix[3, :], label='joint 4')
+ax2.plot(time, momentum_matrix[4, :], label='joint 5')
+ax2.plot(time, momentum_matrix[5, :], label='joint 6')
+plt.legend()
+plt.show()
+"""
+#print(momentum_matrix[1, :])
 """        
 poses = Yu.fkine_all([-pi/2, -pi/2, pi/2, -pi/3, -pi/3, 0]) # the pose of each robot joint as SE3
 #print(p1)

@@ -52,7 +52,7 @@ def random_traj(vel_max, t_accel_rand, q0, qf, tf, time):
     return (np.array(q), np.array(qd), np.array(qdd))
 
 
-def hka_profile_opt(N, Nbest, traj_time):
+def hka_profile_opt(N, Nbest, traj_time, step):
     start_time = ti.time()
     vel_max = np.zeros(6)
     a = np.zeros(6)
@@ -60,12 +60,12 @@ def hka_profile_opt(N, Nbest, traj_time):
     t_brake = np.zeros(6)
     t_min = np.zeros(6)
     t_max = np.zeros(6)
-    traj = generate_traj_time(traj_time)
+    traj = generate_traj_time(traj_time, step)
     plot_trajectory(traj)
     time = traj[6]
-    angle = np.zeros((6, 201))
-    velocity = np.zeros((6, 201))
-    accel = np.zeros((6, 201))
+    angle = np.zeros((6, step))
+    velocity = np.zeros((6, step))
+    accel = np.zeros((6, step))
     t0 = 0 # start
     tf = time[-1] # finish
     mu_t = np.zeros(6)
@@ -73,9 +73,9 @@ def hka_profile_opt(N, Nbest, traj_time):
     t_accel_rand = np.zeros((6, N))
     q0 = np.zeros(6)
     qf = np.zeros(6)
-    q_mat = np.zeros((N, 6, 201))
-    qd_mat = np.zeros((N, 6, 201))
-    qdd_mat = np.zeros((N, 6, 201))
+    q_mat = np.zeros((N, 6, step))
+    qd_mat = np.zeros((N, 6, step))
+    qdd_mat = np.zeros((N, 6, step))
     iter = 0
     max_iter = 150
     post_t_rand = np.zeros((6, Nbest))
@@ -93,8 +93,8 @@ def hka_profile_opt(N, Nbest, traj_time):
         #i_accel = np.where(time == t_accel)[0][0]
         #i_brake = np.where(time == t_brake)[0][0]
         a[j] = vel_max[j] / t_accel[j]
-        t_min[j] = abs(vel_max[j] / 250)
-        t_max[j] = abs(tf / 3 + vel_max[j] / 250)
+        t_min[j] = abs(vel_max[j] / 150)
+        t_max[j] = abs(tf / 3 + vel_max[j] / 150)
 
     mu_t = t_accel # initialize mean vector
     sig_t = (t_max - t_min) / 2 # initialize std.dev. vector
@@ -170,7 +170,7 @@ def hka_profile_opt(N, Nbest, traj_time):
         sig_t = new_mu_sig_t[1]
         print(var_t_rand)
 
-        if all(i < 1e-4 for i in var_t_rand) == True:
+        if all(i < 1e-6 for i in var_t_rand) == True:
             print(f'exited HKA at iter = {iter}')
             break
 
@@ -186,14 +186,15 @@ def hka_profile_opt(N, Nbest, traj_time):
     print(f'optimized total energy consumption: {energy_opt} J')
     print(f'Optimization runtime: {ti.time() - start_time} seconds')
 
-#hka_profile_opt(50, 5, 2)
+hka_profile_opt(50, 5, 2, 201)
+
 decision = 1
 if decision == 1:
     for j in range(6):
         result_q = np.loadtxt('prof_result_q.txt')
         result_qd = np.loadtxt('prof_result_qd.txt')
         result_qdd = np.loadtxt('prof_result_qdd.txt')
-        joint_data = generate_traj_time(2)
+        joint_data = generate_traj_time(2, 201)
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
         ax1.plot(joint_data[6], result_q[j, :], label=f'optimized traj for joint {j+1}')
         ax1.plot(joint_data[6], joint_data[j].q, label=f'orignal traj for joint {j+1}')
@@ -207,7 +208,8 @@ if decision == 1:
         ax3.plot(joint_data[6], result_qdd[j, :], label=f'orignal traj for joint {j+1}')
         ax3.plot(joint_data[6], joint_data[j].qdd, label=f'orignal traj for joint {j+1}')
         ax3.set_xlabel('Travel time in s')
-        ax3.set_ylabel('Joint velocity in rad/s^2')
+        ax3.set_ylabel('Joint acceleration in rad/s^2')
+        fig.suptitle(f"Trajectory for Joint {j+1}", fontsize=16)
         plt.show()
 
 #plt.show()
