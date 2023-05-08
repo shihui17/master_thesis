@@ -14,7 +14,7 @@ from traj import *
 # same goes for the lower bound
 # to generalise, define the following function:
 
-joint_data = generate_traj_time(2)
+joint_data = generate_traj_time(2, 201)
 angle = joint_data[3].q
 velocity = joint_data[3].qd
 accel = joint_data[3].qdd

@@ -84,7 +84,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
     end_qd = np.zeros(6)
     end_qdd = np.zeros(6)
     debug = 0
-    joint = generate_traj_time(traj_time) # generate trapezoidal trajectory with given trajectory time, discretized with 100 time steps, change config in traj.py
+    joint = generate_traj_time(traj_time, 201) # generate trapezoidal trajectory with given trajectory time, discretized with 100 time steps, change config in traj.py
     u = np.zeros(6) # profile identifier, 1 for positive trapeze, -1 for negative trapeze
     time = joint[6]
     tolerance_band = np.zeros((2, 100*traj_time+1, 6))

@@ -65,7 +65,7 @@ q_graph = results[2]
 qd_graph = results[3]
 qdd_graph = results[4]
 
-og_result = generate_traj_time(2)
+og_result = generate_traj_time(2, 201)
 
 q_og = np.zeros((6, 201))
 qd_og = np.zeros((6, 201))
