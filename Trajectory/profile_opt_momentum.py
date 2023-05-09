@@ -101,7 +101,7 @@ def hka_profile_opt(N, Nbest, traj_time, step):
     print(f'original total energy consumption: {en_og} J')
 
     # HKA starts here
-    while iter <= 150:
+    while iter <= 5:
 
         for j in range(6):
             lb = (t_min[j] - mu_t[j]) / sig_t[j]
@@ -161,7 +161,7 @@ def hka_profile_opt(N, Nbest, traj_time, step):
         sig_t = new_mu_sig_t[1]
         print(var_t_rand)
 
-        if all(i < 1e-6 for i in var_t_rand) == True:
+        if all(i < 1e-4 for i in var_t_rand) == True:
             print(f'exited HKA at iter = {iter}')
             break
 
@@ -182,10 +182,10 @@ hka_profile_opt(50, 5, 2.5, 201)
 decision = 1
 if decision == 1:
     for j in range(6):
-        result_q = np.loadtxt('prof_result_q.txt')
-        result_qd = np.loadtxt('prof_result_qd.txt')
-        result_qdd = np.loadtxt('prof_result_qdd.txt')
-        joint_data = generate_traj_time(4, 201)
+        result_q = np.loadtxt('mmt_result_q.txt')
+        result_qd = np.loadtxt('mmt_result_qd.txt')
+        result_qdd = np.loadtxt('mmt_result_qdd.txt')
+        joint_data = generate_traj_time(2.5, 201)
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
         ax1.plot(joint_data[6], result_q[j, :], label=f'optimized traj for joint {j+1}')
         ax1.plot(joint_data[6], joint_data[j].q, label=f'orignal traj for joint {j+1}')

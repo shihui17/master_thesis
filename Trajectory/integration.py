@@ -47,7 +47,7 @@ def kalman_gain(sig, var_post, mu, mu_meas):
     
     return mu_new, sig_new
 
-def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
+def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time, step):
     """
     Applies heuristic Kalman algorithm to a given trajectory of n robot joints,
     returns the optimized q, qd, qdd trajectories for all joints
@@ -88,7 +88,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
     end_qd = np.zeros(6)
     end_qdd = np.zeros(6)
     debug = 0
-    joint = generate_traj_time(traj_time) # generate trapezoidal trajectory with given trajectory time, discretized with 100 time steps, change config in traj.py
+    joint = generate_traj_time(traj_time, step) # generate trapezoidal trajectory with given trajectory time, discretized with 100 time steps, change config in traj.py
     plot_trajectory(joint)
     u = np.zeros(6) # profile identifier, 1 for positive trapeze, -1 for negative trapeze
 
@@ -321,14 +321,14 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
                 for z in range(6):
                     if z == 1:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -160 if sign_array[z] > 0 else 160
+                            coeff[z] = -200 if sign_array[z] > 0 else 200
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 160 if sign_array[z] < 0 else -160
+                            coeff[z] = 200 if sign_array[z] < 0 else -200
                     elif z == 0:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -10 if sign_array[z] > 0 else 10
+                            coeff[z] = -100 if sign_array[z] > 0 else 100
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 10 if sign_array[z] < 0 else -10
+                            coeff[z] = 100 if sign_array[z] < 0 else -100
                     elif z == 2:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
                             coeff[z] = -50 if sign_array[z] > 0 else 40
@@ -433,7 +433,7 @@ def heuristic_kalman(N, Nbest, D, alpha, sd, n, sample_num, traj_time):
     return result_q, result_qd, result_qdd, time_vec, joint
 
 
-results = heuristic_kalman(70, 7, np.array([[0, 0, 0, 0, 0, 0], [0.0003, 5, 6, 8, 20, 10]]), 0, 0, 6, 6, 2)
+results = heuristic_kalman(70, 7, np.array([[0, 0, 0, 0, 0, 0], [0.0003, 5, 6, 8, 20, 10]]), 0, 0, 6, 6, 2, 201)
 
 joint = results[4]
 time = results[3][0:7]

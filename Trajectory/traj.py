@@ -44,7 +44,7 @@ def generate_traj_time(traj_time, step):
     tg2 = tools.trapezoidal(-pi, -0.749*pi, t)
     tg3 = tools.trapezoidal(pi/2, 0.689*pi, t)
     tg4 = tools.trapezoidal(-pi/2, 0.444*pi, t)
-    tg5 = tools.trapezoidal(-pi/2, -0.5*pi, t)
+    tg5 = tools.trapezoidal(-pi/2, -0.8*pi, t)
     tg6 = tools.trapezoidal(0, -pi, t)
 
     return tg1, tg2, tg3, tg4, tg5, tg6, t

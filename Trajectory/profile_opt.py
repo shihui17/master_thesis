@@ -186,14 +186,14 @@ def hka_profile_opt(N, Nbest, traj_time, step):
     result_q = q_mat[num_array[0], :, :]
     result_qd = qd_mat[num_array[0], :, :]
     result_qdd = qdd_mat[num_array[0], :, :]
-    delta_J = en_og - energy_opt
+    delta_J = en_og - energy_opt[0]
     percent_J = np.round(delta_J / en_og * 100, 1)
     np.savetxt('prof_result_q.txt', result_q)
     np.savetxt('prof_result_qd.txt', result_qd)
     np.savetxt('prof_result_qdd.txt', result_qdd)
     print(f'Original total energy consumption: {en_og} J')
     print(f'Optimized total energy consumption: {energy_opt} J')
-    print(f'{delta_J} J (around {percent_J}) can be saved with the optimized trajectory.')
+    print(f'{delta_J} J (around {percent_J}%) can be saved with the optimized trajectory.')
     print(f'Optimization runtime: {ti.time() - start_time} seconds')
 
 hka_profile_opt(50, 5, 4, 201)
@@ -221,6 +221,7 @@ if decision == 1:
         ax3.set_ylabel('Joint acceleration in rad/s^2')
         fig.suptitle(f"Trajectory for Joint {j+1}", fontsize=16)
         
+        fig.savefig(f'C:\Codes\master_thesis\Trajectory\Figures\Profile_optimization/prof_opt_joint{j+1}.png')
         plt.show()
 
 #plt.show()

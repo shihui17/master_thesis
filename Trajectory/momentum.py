@@ -21,18 +21,18 @@ def total_center_of_mass(position_mass, mass_vec, i):
 
 def calculate_momentum(angle, velocity, accel): # these 3 matrices should have the size of (201, 6)
 
-    Yu = rtb.models.DH.Yu()
+    Yu = rtb.models.DH.Yu() # import Yu with all relevant geometric and mechanical data
     #traj = generate_traj_time(2.5, 201)
     mass_vec = np.zeros(6)
     v_ee = np.zeros(201)
 
-    for j in range(6):
+    for j in range(6): # read masses for each robot segment
         mass_vec[j] = Yu[j].m
 
-    center_of_mass = Yu.r
+    center_of_mass = Yu.r # center of mass position vector with respect to CS of segment
     trafo_mass_list = []
 
-    for s in range(6):
+    for s in range(6): # generate homogenous transformation matrix from local CS of segment to center of mass, repeat 6 times for all segments
         trafo_mass = np.array([[1, 0, 0, center_of_mass[0, s]], [0, 1, 0, center_of_mass[1, s]], [0, 0, 1, center_of_mass[2, s]], [0, 0, 0, 1]])
         trafo_mass_list.append(trafo_mass)
 
@@ -98,18 +98,7 @@ def calculate_momentum(angle, velocity, accel): # these 3 matrices should have t
 #print(np.transpose(lin_momentum[3, :, :]))
 #print(lin_momentum_total)
 #print(mmt_abs)
-    max_mmt = np.amax(mmt_abs, axis=1)
-    max_joint = np.argmax(max_mmt)
-    max_joint_mmt = np.max(max_mmt)
-    #print(max_mmt)
-    lin_max = np.transpose(lin_momentum[max_joint, :, :])
-    #print(lin_max)
-    translation = np.zeros(6)
 
-    v_ee = v_ee[:3, :]
-    v_ee = np.transpose(v_ee)
-    v_abs = np.linalg.norm(v_ee, 2, axis=1)
-    
     result = np.linalg.norm(lin_momentum_total, 2, axis=0)
     return np.max(result)
     #print(v_ee)

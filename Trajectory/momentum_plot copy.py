@@ -20,23 +20,15 @@ def total_center_of_mass(position_mass, mass_vec, i):
     Zcm = m_Z / m_total
     return np.array([Xcm, Ycm, Zcm])
 
-def calculate_momentum(traj):
+def calculate_momentum(traj, angle, velocity, accel):
 
-    angle = np.zeros((201, 6))
-    velocity = np.zeros((201, 6))
-    accel = np.zeros((201, 6))
     Yu = rtb.models.DH.Yu()
     #traj = generate_traj_time(2.5, 201)
     mass_vec = np.zeros(6)
     v_ee = np.zeros(201)
 
     for j in range(6):
-        angle[:, j] = traj[j].q
-        velocity[:, j] = traj[j].qd
-        accel[:, j] = traj[j].qdd
         mass_vec[j] = Yu[j].m
-
-
 
     center_of_mass = Yu.r
     trafo_mass_list = []
@@ -88,19 +80,23 @@ def calculate_momentum(traj):
             #print(velocity[i, :joint_num+1])
             lin_ang = jacobian_list[joint_num] @ velocity[i, :joint_num+1]
             lin_vel[joint_num][:, i] = lin_ang[:3] # this is the matrix for the linear velocity of the center of mass of each link. Momentum can be calculated based on this matrix.
-            lin_momentum[joint_num][:, i] = Yu[joint_num].m * lin_ang[:3]
-            lin_momentum_total[:, i] += lin_momentum[joint_num][:, i]
+            lin_momentum[joint_num, :, i] = Yu[joint_num].m * lin_ang[:3] # linear momentum of each link
+            lin_momentum_total[:, i] += lin_momentum[joint_num][:, i] # total linear momentum (sum of all links)
             mmt_abs[joint_num, i] = np.linalg.norm(lin_momentum[joint_num][:, i], 2)
             ang_vel[joint_num][:, i] = lin_ang[3:6] # this is the matrix for the angular velocity of the center of mass of each link. Momentum can be calculated based on this matrix.
             lin_ang_vel[joint_num][:, i] = (jacobian_list[joint_num] @ velocity[i, :joint_num+1])
 
     max_mmt = np.amax(mmt_abs, axis=1)
+    #print(mmt_abs)
+    #print(max_mmt)
     max_joint = np.argmax(max_mmt)
+    #print(max_joint)
     max_joint_mmt = np.max(max_mmt)
     #print(max_mmt)
     lin_max = np.transpose(lin_momentum[max_joint, :, :])
     #print(lin_max)
-    
+    return lin_max, lin_momentum_total, position_mass, T_cm, max_joint
+
     """
     v_ee = v_ee[:3, :]
     v_ee = np.transpose(v_ee)
@@ -113,70 +109,117 @@ def calculate_momentum(traj):
 #yline = position_mass[max_joint, 1, :]
 #zline = position_mass[max_joint, 2, :]
 #print(lin_vel[max_joint, :, :])
+mass_vec = np.zeros(6)
+v_ee = np.zeros(201)
+angle = np.loadtxt('mmt_result_q.txt')
+angle = np.transpose(angle)
+velocity = np.loadtxt('mmt_result_qd.txt')
+velocity = np.transpose(velocity)
+accel = np.loadtxt('mmt_result_qdd.txt')
+accel = np.transpose(accel)
 
+angle_og = np.zeros((201, 6))
+velocity_og = np.zeros((201, 6))
+accel_og = np.zeros((201, 6))
+Yu = rtb.models.DH.Yu()
 
-
-    xline = lin_max[:, 0]
-    yline = lin_max[:, 1]
-    zline = lin_max[:, 2]
-    xline1 = position_mass[max_joint, 0, :]
-    yline1 = position_mass[max_joint, 1, :]
-    zline1 = position_mass[max_joint, 2, :]
-    xline2 = T_cm[:, 0]
-    yline2 = T_cm[:, 1]
-    zline2 = T_cm[:, 2]
-
-
-    ax = plt.axes(111, projection='3d')
-    #ax.set_xlim([-8, 8])
-    #ax.set_ylim([-8, 8])
-    #ax.set_zlim([-1, 1])
-    ax.set_xlabel('x coordinate in m')
-    ax.set_ylabel('Y coordinate in m')
-    ax.set_zlabel('Z coordinate in m')
-    #ax.plot3D(xline, yline, zline)
-    #ax.plot3D(xline1, yline1, zline1, color='blue')
-    ax.plot3D(xline2, yline2, zline2, color='red', linewidth=1, label='Trajectory of center of mass')
-    plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/mass_traj.png')
-
-    start = np.transpose(position_mass[max_joint, :, :])
-    #print(start)
-    #print(np.round(lin_max, 2))
-    for i in range(len(lin_max)):
-    #for i in range(5):
-        if i == 0:
-            ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, label='Momentum vector of robot on its center of mass')
-        elif i % 4 == 0:
-        #ax.quiver(start[i, 0], start[i, 1], start[i, 2], lin_max[i, 0], lin_max[i, 1], lin_max[i, 2], arrow_length_ratio=0.01, length=np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True')
-            ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05)#length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, color='blue')
-        #ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_max[i, 0], lin_max[i, 1], lin_max[i, 2], arrow_length_ratio=0.01, length=np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True')
-    #plt.show()
-    ax.legend()
-    plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/momentum_traj.png')
-    #print(lin_momentum_total)
-    result = np.linalg.norm(lin_momentum_total, 2, axis=0)
-    #print(result)
-    max = np.max(result)
-    argmax = np.argmax(result)
-    t_max = traj[6][argmax]
-    #plt.plot(traj[6], result)
-    plt.show()
-    #for joint_num in range(6):
-        #for joint 6:
-    #translation = pose_list[5] @ np.array([0, 0, 0, 1])
-    #print(translation)
-    plt.plot(traj[6], result)
-    plt.plot(t_max, max, marker='o', markeredgecolor='blue')
-    plt.xlabel('Trajectory time in s')
-    plt.ylabel('Robot total momentum in kg*m/s')
-    plt.title('Change of total momentum over time', fontsize=20)
-    plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/momentum_total.png')
-    plt.show()
-    
-    return np.max(result)
 
 traj = generate_traj_time(2.5, 201)
-calculate_momentum(traj)
+for j in range(6):
+    angle_og[:, j] = traj[j].q
+    velocity_og[:, j] = traj[j].qd
+    accel_og[:, j] = traj[j].qdd
+    mass_vec[j] = Yu[j].m
+
+result = calculate_momentum(traj, angle, velocity, accel)
+result_og = calculate_momentum(traj, angle_og, velocity_og, accel_og)
+
+lin_max = result[0]
+position_mass = result[2]
+lin_momentum_total = result[1]
+T_cm = result[3]
+max_joint = result[4]
+
+lin_max_og = result_og[0]
+position_mass_og = result_og[2]
+lin_momentum_total_og = result_og[1]
+T_cm_og = result_og[3]
+max_joint_og = result_og[4]
+
+
+xline1 = T_cm_og[:, 0]
+print(T_cm_og)
+print(T_cm)
+yline1 = T_cm_og[:, 1]
+zline1 = T_cm_og[:, 2]
+xline2 = T_cm[:, 0]
+yline2 = T_cm[:, 1]
+zline2 = T_cm[:, 2]
+
+
+ax = plt.axes(111, projection='3d')
+#ax.set_xlim([-8, 8])
+#ax.set_ylim([-8, 8])
+#ax.set_zlim([-1, 1])
+ax.set_xlabel('x coordinate in m')
+ax.set_ylabel('Y coordinate in m')
+ax.set_zlabel('Z coordinate in m')
+#ax.plot3D(xline, yline, zline)
+#ax.plot3D(xline1, yline1, zline1, color='blue')
+ax.plot3D(xline1, yline1, zline1, color='red', linewidth=1, label='Original trajectory of center of mass')
+ax.plot3D(xline2, yline2, zline2, color='green', linewidth=1, label='Optimized rajectory of center of mass')
+ax.legend()
+plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/mass_traj.png')
+plt.show()
+
+start = np.transpose(position_mass[max_joint, :, :])
+#print(start)
+#print(np.round(lin_max, 2))
+ax2 = plt.axes(111, projection='3d')
+ax2.set_xlabel('x coordinate in m')
+ax2.set_ylabel('Y coordinate in m')
+ax2.set_zlabel('Z coordinate in m')
+ax2.plot3D(xline1, yline1, zline1, color='red', linewidth=1, label='Original trajectory of center of mass')
+ax2.plot3D(xline2, yline2, zline2, color='green', linewidth=1, label='Optimized rajectory of center of mass')
+
+for i in range(201):
+#for i in range(5):
+    if i == 0:
+        ax2.quiver(T_cm_og[i, 0], T_cm_og[i, 1], T_cm_og[i, 2], lin_momentum_total_og[0, i], lin_momentum_total_og[1, i], lin_momentum_total_og[2, i], color='red', length=0.008*np.linalg.norm((start[i, :]-lin_momentum_total_og[:, i]), 2), normalize='True', arrow_length_ratio=0.02, label='Momentum vector of robot on its center of mass')
+        ax2.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.008*np.linalg.norm((start[i, :]-lin_momentum_total[:, i]), 2), normalize='True', arrow_length_ratio=0.02, label='Momentum vector of robot on its center of mass')
+    elif i % 4 == 0:
+    #ax.quiver(start[i, 0], start[i, 1], start[i, 2], lin_max[i, 0], lin_max[i, 1], lin_max[i, 2], arrow_length_ratio=0.01, length=np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True')
+        ax2.quiver(T_cm_og[i, 0], T_cm_og[i, 1], T_cm_og[i, 2], lin_momentum_total_og[0, i], lin_momentum_total_og[1, i], lin_momentum_total_og[2, i], color='red', length=0.008*np.linalg.norm((start[i, :]-lin_momentum_total_og[:, i]), 2), normalize='True', arrow_length_ratio=0.02)#length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, color='blue')    
+        ax2.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.008*np.linalg.norm((start[i, :]-lin_momentum_total[:, i]), 2), normalize='True', arrow_length_ratio=0.02)#length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, color='blue')
+#plt.show()
+ax2.legend()
+plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/momentum_traj.png')
+plt.show()
+
+result = np.linalg.norm(lin_momentum_total, 2, axis=0)
+max = np.max(result)
+argmax = np.argmax(result)
+t_max = traj[6][argmax]
+
+result_og = np.linalg.norm(lin_momentum_total_og, 2, axis=0)
+max_og = np.max(result_og)
+argmax_og = np.argmax(result_og)
+t_max_og = traj[6][argmax_og]
+
+plt.plot(traj[6], result, color='green', label='Optimized robot momentum')
+plt.plot(traj[6], result_og, color='red', label='Original robot momtenum')
+plt.plot(t_max, max, marker='o', markeredgecolor='green', markerfacecolor='green', label='Optimized maximal momentum')
+plt.plot(t_max_og, max_og, marker='o', markeredgecolor='red', markerfacecolor='red', label='Original maximal momentum')
+plt.xlabel('Trajectory time in s')
+plt.ylabel('Robot total momentum in kg*m/s')
+#plt.title('Change of total momentum over time', fontsize=20, pad=20)
+plt.legend()
+plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/momentum_total.png')
+plt.show()
+
+
+
+
 
 """        
 poses = Yu.fkine_all([-pi/2, -pi/2, pi/2, -pi/3, -pi/3, 0]) # the pose of each robot joint as SE3
