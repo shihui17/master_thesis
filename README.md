@@ -8,3 +8,5 @@ Basic code modules for performance-criteria-based trajectory planning for future
 * Example codes for heuristic Kalman algorithm (matlab & python)
 * Codes for robot energy calculation and optimization using Kalman algorithm
 * Codes for robot momentum calculation
+* Codes for momentum optimization
+* Various plotting functions
