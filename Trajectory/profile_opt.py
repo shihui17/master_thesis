@@ -175,7 +175,7 @@ def hka_profile_opt(N, Nbest, traj_time, step):
         sig_t = new_mu_sig_t[1]
         print(f'the diagonal of the covariance matrix:\n{var_t_rand}')
 
-        if all(i < 1e-5 for i in var_t_rand) == True:
+        if all(i < 1e-4 for i in var_t_rand) == True:
             print(f'exited HKA at iter = {iter}')
             break
         
@@ -196,7 +196,7 @@ def hka_profile_opt(N, Nbest, traj_time, step):
     print(f'{delta_J} J (around {percent_J}%) can be saved with the optimized trajectory.')
     print(f'Optimization runtime: {ti.time() - start_time} seconds')
 
-hka_profile_opt(50, 5, 4, 201)
+hka_profile_opt(30, 3, 4, 201)
 
 decision = 1
 if decision == 1:
@@ -206,17 +206,17 @@ if decision == 1:
         result_qdd = np.loadtxt('prof_result_qdd.txt')
         joint_data = generate_traj_time(4, 201)
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
-        ax1.plot(joint_data[6], result_q[j, :], label=f'optimized traj for joint {j+1}')
-        ax1.plot(joint_data[6], joint_data[j].q, label=f'orignal traj for joint {j+1}')
+        ax1.plot(joint_data[6], result_q[j, :], label=f'optimized traj for joint {j+1}', color='green')
+        ax1.plot(joint_data[6], joint_data[j].q, label=f'orignal traj for joint {j+1}', color='red')
         ax1.set_xlabel('Travel time in s')
         ax1.set_ylabel('Joint angle in rad')
         ax1.legend()
-        ax2.plot(joint_data[6], result_qd[j, :], label=f'optimized traj for joint {j+1}')
-        ax2.plot(joint_data[6], joint_data[j].qd, label=f'orignal traj for joint {j+1}')
+        ax2.plot(joint_data[6], result_qd[j, :], label=f'optimized traj for joint {j+1}', color='g')
+        ax2.plot(joint_data[6], joint_data[j].qd, label=f'orignal traj for joint {j+1}', color='r')
         ax2.set_xlabel('Travel time in s')
         ax2.set_ylabel('Joint velocity in rad/s')
-        ax3.plot(joint_data[6], result_qdd[j, :], label=f'orignal traj for joint {j+1}')
-        ax3.plot(joint_data[6], joint_data[j].qdd, label=f'orignal traj for joint {j+1}')
+        ax3.plot(joint_data[6], result_qdd[j, :], label=f'optimized traj for joint {j+1}', color='g')
+        ax3.plot(joint_data[6], joint_data[j].qdd, label=f'orignal traj for joint {j+1}', color='r')
         ax3.set_xlabel('Travel time in s')
         ax3.set_ylabel('Joint acceleration in rad/s^2')
         fig.suptitle(f"Trajectory for Joint {j+1}", fontsize=16)

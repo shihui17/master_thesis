@@ -2,8 +2,8 @@ function [ q ] = IKinemYuanda_6R_IceAge( robot, XEE,  config, opt )
 
 
 %IKinemYuanda_6R is identical to IKinemUR5
-%   Detailed explanation goes here
-%   [ q ] = IKinemUR5( robot, XEE,  config, opt )
+
+
 
 
 %% Inputs 
