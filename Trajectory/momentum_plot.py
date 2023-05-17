@@ -172,7 +172,10 @@ def calculate_momentum(traj):
     plt.title('Change of total momentum over time', fontsize=20)
     plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/momentum_total.png')
     plt.show()
-    
+    print(lin_vel)
+    abs_lin_vel = np.linalg.norm(lin_vel, 2, axis=1)
+    print(np.amax(abs_lin_vel, axis=1))
+    print(np.argmax(np.amax(abs_lin_vel, axis=1)))
     return np.max(result)
 
 traj = generate_traj_time(2.5, 201)

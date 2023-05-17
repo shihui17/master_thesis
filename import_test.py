@@ -15,7 +15,7 @@ from typing import Tuple
 from scipy.spatial.transform import Rotation as R
 
 myrobot = rtb.models.DH.Yu()
-Rot = R.from_matrix('z', 90, degrees = True)
+#Rot = R.from_matrix('z', 90, degrees = True)
 
 i = 1
 if i == 0:
@@ -31,7 +31,7 @@ else:
                         [0, 0, 0, 1]]
     )
 
-myrobot.rne(q, qd, qdd)
+#myrobot.rne(q, qd, qdd)
 
 
 q = [pi/6, pi/6, pi/6, pi/6, pi/6, pi/6]       
@@ -82,15 +82,15 @@ for j in range(n - 1, -1, -1):
 """
 
 J = np.round(myrobot.jacob0(q), 2)
-J1 = np.round(myrobot.jacobe(q), 2)
+#J1 = np.round(myrobot.jacobe(q), 2)
 print(J)
-print(J1)
+#print(J1)
 
 Z = np.zeros((3, 3), dtype=T.dtype)
 R = smb.t2r(T)
 Tz = np.block([[R, Z], [Z, R]])
-J2 = Tz @ J1
-print(np.round(J2,2))
+#J2 = Tz @ J1
+#print(np.round(J2,2))
 """
 fwd = myrobot.fkine(q)
 T = fwd.A

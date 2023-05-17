@@ -28,7 +28,7 @@ def create_tolerance_bands(angle, velocity, time, width, upper_lower):
     qf = angle[-1]
     V = (qf - q0) / tf * 1.5
     t_accel = np.round((q0 - qf + V * tf) / V, 2) # end of acceleration, rounded to 2 decimals to exactly match the time points in joint_data[6]
-    t_brake = np.round(tf - t_accel, 2) # start of braking
+    t_brake = np.round(tf - t_accel, 2) # start of brakingq
     i_accel = np.where(time == t_accel)[0][0]
     i_brake = np.where(time == t_brake)[0][0]
 
@@ -114,28 +114,37 @@ def create_tolerance_bands(angle, velocity, time, width, upper_lower):
     return t_total, angle_bound, t_accel, t_brake
 
 
-upper = create_tolerance_bands(angle, velocity, time, 0.5, "upper")
-lower = create_tolerance_bands(angle, velocity, time, 0.5, "lower")
+upper = create_tolerance_bands(angle, velocity, time, 0.001, "upper")
+lower = create_tolerance_bands(angle, velocity, time, 0.001, "lower")
 #print(upper[1])
-"""
+
 #print(lower[1])
-joint = generate_traj_time(2)
+joint = generate_traj_time(2,201)
 tolerance_band = np.zeros((2, 100*2+1, 6))
 upper_bound = np.zeros(6)
 for i in range(6): # generate tolerance band for all joints
     angle = joint[i].q
     velocity = joint[i].qd
-    upper = create_tolerance_bands(angle, velocity, time, 0.5, "upper")
+    upper = create_tolerance_bands(angle, velocity, time, 0.65, "upper")
     #print(upper[1])
-    lower = create_tolerance_bands(angle, velocity, time, 0.5, "lower")
+    lower = create_tolerance_bands(angle, velocity, time, 0.65, "lower")
     tolerance_band[0, :, i] = upper[1]
     tolerance_band[1, :, i] = lower[1]
 
+plt.plot(time, joint[5].q, label='Original joint trajectory', color='r')
+plt.plot(upper[0], tolerance_band[0, :, 5], label='Tolerance band', linestyle='dashed', color='green')
+plt.plot(upper[0], tolerance_band[1, :, 5], linestyle='dashed', color='green')
+plt.legend(fontsize=9)
+plt.xlabel('Trajectory time in s', fontsize=10, labelpad=4)
+plt.ylabel('Joint angle in rad', fontsize=10, labelpad=4)
+plt.xticks(fontsize=9)
+plt.yticks(fontsize=9)
+plt.show()
+"""
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
 ax1.plot(time, joint[0].q, label='original joint1', color='red')
 ax1.plot(upper[0], tolerance_band[0, :, 0], label='tolerance band', linestyle='dashed', color='green')
-ax1.plot(upper[0], tolerance_band[1, :, 0], linestyle='dashed', color='green')
-ax1.legend()
+
 ax2.plot(time, joint[1].q, label='original joint2', color='red')
 ax2.plot(upper[0], tolerance_band[0, :, 1], label='tolerance band', linestyle='dashed', color='green')
 ax2.plot(upper[0], tolerance_band[1, :, 1], linestyle='dashed', color='green')

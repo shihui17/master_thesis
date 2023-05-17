@@ -98,8 +98,11 @@ def calculate_momentum(angle, velocity, accel): # these 3 matrices should have t
 #print(np.transpose(lin_momentum[3, :, :]))
 #print(lin_momentum_total)
 #print(mmt_abs)
-
+    abs_lin_vel = np.linalg.norm(lin_vel, 2, axis=1)
+    max_lin_vel = np.amax(abs_lin_vel, axis=1)
+    arg_max_lin = np.argmax(max_lin_vel)
     result = np.linalg.norm(lin_momentum_total, 2, axis=0)
+    result2 = max_lin_vel * np.linalg.norm(mass_vec, 1)
     return np.max(result)
     #print(v_ee)
     #print(v_abs)

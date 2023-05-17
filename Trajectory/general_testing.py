@@ -16,6 +16,7 @@ from HKA_kalman_gain import *
 from energy_est import *
 import time as ti
 from tau import *
+"""
 start_time1 = ti.time()
 a = cal_tau(np.ones(6), np.ones(6), np.ones(6))
 end_time1 = ti.time()
@@ -28,3 +29,8 @@ t2 = end_time2 - start_time2
 
 print(t1)
 print(t2)
+"""
+
+a = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 2]])
+b = np.linalg.inv(a)
+print(b)
