@@ -119,9 +119,9 @@ def calculate_momentum(traj):
     xline = lin_max[:, 0]
     yline = lin_max[:, 1]
     zline = lin_max[:, 2]
-    xline1 = position_mass[max_joint, 0, :]
-    yline1 = position_mass[max_joint, 1, :]
-    zline1 = position_mass[max_joint, 2, :]
+    xline1 = position_mass[0, 0, :]
+    yline1 = position_mass[0, 1, :]
+    zline1 = position_mass[0, 2, :]
     xline2 = T_cm[:, 0]
     yline2 = T_cm[:, 1]
     zline2 = T_cm[:, 2]
@@ -138,7 +138,6 @@ def calculate_momentum(traj):
     #ax.plot3D(xline1, yline1, zline1, color='blue')
     ax.plot3D(xline2, yline2, zline2, color='red', linewidth=1, label='Trajectory of center of mass')
     plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/mass_traj.png')
-
     start = np.transpose(position_mass[max_joint, :, :])
     #print(start)
     #print(np.round(lin_max, 2))
@@ -172,10 +171,7 @@ def calculate_momentum(traj):
     plt.title('Change of total momentum over time', fontsize=20)
     plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/momentum_total.png')
     plt.show()
-    print(lin_vel)
-    abs_lin_vel = np.linalg.norm(lin_vel, 2, axis=1)
-    print(np.amax(abs_lin_vel, axis=1))
-    print(np.argmax(np.amax(abs_lin_vel, axis=1)))
+
     return np.max(result)
 
 traj = generate_traj_time(2.5, 201)
