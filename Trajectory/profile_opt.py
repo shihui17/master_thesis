@@ -95,8 +95,8 @@ def hka_profile_opt(N, Nbest, traj_time, step):
             t_accel[j] = 0
             t_brake[j] = tf
             a[j] = 0
-            t_min[j] = abs(vel_max[j] / 150)
-            t_max[j] = abs(tf / 3 + vel_max[j] / 150)
+            t_min[j] = abs(vel_max[j] / 200)
+            t_max[j] = abs(tf / 3 + vel_max[j] / 200)
         else: 
             vel_max[j] = (qf[j] - q0[j]) / tf * 1.5
             t_accel[j] = np.round((q0[j] - qf[j] + vel_max[j] * tf) / vel_max[j], 2) # end of acceleration, rounded to 2 decimals to exactly match the time points in traj[6]
@@ -104,8 +104,8 @@ def hka_profile_opt(N, Nbest, traj_time, step):
             #i_accel = np.where(time == t_accel)[0][0]
             #i_brake = np.where(time == t_brake)[0][0]
             a[j] = vel_max[j] / t_accel[j]
-            t_min[j] = abs(vel_max[j] / 150)
-            t_max[j] = abs(tf / 3 + vel_max[j] / 150)
+            t_min[j] = abs(vel_max[j] / 200)
+            t_max[j] = abs(tf / 3 + vel_max[j] / 200)
 
     mu_t = t_accel # initialize mean vector
     sig_t = (t_max - t_min) / 2 # initialize std.dev. vector

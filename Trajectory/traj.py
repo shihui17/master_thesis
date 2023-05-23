@@ -36,6 +36,7 @@ def generate_traj_time(traj_time):
 
     return tg1, tg2, tg3, tg4, tg5, tg6, t
 """
+"""
 def generate_traj_time(traj_time, step):
     #Yu = rtb.models.DH.Yu()
     t = np.linspace(0, traj_time, step)
@@ -48,6 +49,7 @@ def generate_traj_time(traj_time, step):
 
     return tg1, tg2, tg3, tg4, tg5, tg6, t
 """
+
 def generate_traj_time(traj_time, step):
     #Yu = rtb.models.DH.Yu()
     t = np.linspace(0, traj_time, step)
@@ -59,7 +61,7 @@ def generate_traj_time(traj_time, step):
     tg6 = tools.trapezoidal(0, -pi, t)
 
     return tg1, tg2, tg3, tg4, tg5, tg6, t
-"""
+
 """
 
 p1 = 5

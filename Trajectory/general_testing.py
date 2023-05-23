@@ -31,39 +31,9 @@ print(t1)
 print(t2)
 """
 Yu = rtb.models.DH.Yu()
-traj = generate_traj_time(2.5, 201)
-angle = np.zeros((6, 201))
-velocity = np.zeros((6, 201))
-accel = np.zeros((6, 201))
-mass_vec = np.zeros(6)
+q = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
 
-for j in range(6):
-    angle[j, :] = traj[j].q
-    velocity[j, :] = traj[j].qd
-    accel[j, :] = traj[j].qdd
+Aq_inv = np.array([[1.11636216e-02,  3.15644807e-05, -5.69466554e-24], [3.15644807e-05,  8.92467044e-08, -1.61013304e-26], [-5.69466554e-24, -1.61013304e-26,  6.14284824e-34]])
+vel_u = np.array([-0.999996,   -0.00282743,  0.        ])
 
-ee_list = np.zeros((3, 201))
-for i in range(201):
-    ee = np.array(Yu.fkine(angle[:, i]))
-    ee = ee[:, -1]
-    ee = ee[:3]
-    ee_list[:, i] = ee
-
-xline2 = ee_list[0, :]
-yline2 = ee_list[1, :]
-zline2 = ee_list[2, :]
-
-
-ax = plt.axes(111, projection='3d')
-#ax.set_xlim([-8, 8])
-#ax.set_ylim([-8, 8])
-#ax.set_zlim([-1, 1])
-ax.set_xlabel('x coordinate in m')
-ax.set_ylabel('Y coordinate in m')
-ax.set_zlabel('Z coordinate in m')
-#ax.plot3D(xline, yline, zline)
-#ax.plot3D(xline1, yline1, zline1, color='blue')
-ax.plot3D(xline2, yline2, zline2, color='red', linewidth=1, label='Trajectory of center of mass')
-plt.show()
-
-print(ee_list)
+print(1/(vel_u @ Aq_inv @ vel_u))

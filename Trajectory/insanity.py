@@ -16,7 +16,7 @@ angle = np.zeros((6, 201))
 velocity = np.zeros((6, 201))
 accel = np.zeros((6, 201))
 mass_vec = np.zeros(6)
-points = [np.array([0, -0.13687, 0, 1]), np.array([-0.450, 0, 0.13687, 1]), np.array([0, 0, -0.1957, 1]), np.array([0, 0, 0.10946, 1]), np.array([0, 0, 0.10946, 1]), np.array([0, 0, 0, 1])] # points of interest
+points = [np.array([0, -0.13687, 0, 1]), np.array([-0.450, 0, 0.13687, 1]), np.array([0, 0, 0.10946, 1]), np.array([0, 0, 0.10946, 1]), np.array([0, 0, 0.10946, 1]), np.array([0, 0, 0, 1])] # points of interest
 
 
 for j in range(6):
@@ -39,8 +39,8 @@ def unit_vector(q, point, joint_num, t, qd): # angle and velocity matrix should 
     trafo_p = np.eye(4)
     trafo_p[:, -1] = point
     #lin_vel = np.zeros((6, 3, 201)) 
-    vel_um = np.zeros((6, 3, 201))
-    joint_jacobian = np.zeros((6, joint_num+1))   
+    #vel_um = np.zeros((6, 3, 201))
+    joint_jacobian = np.zeros((6, 6))   
     #lin_momentum = np.zeros((6, 3, 201))
     #ang_momentum = np.zeros((6, 3, 201))
     #lin_momentum_total = np.zeros((3, 201))
@@ -50,31 +50,37 @@ def unit_vector(q, point, joint_num, t, qd): # angle and velocity matrix should 
     #v_ee = np.zeros((6, 201))
     pose_list = []
     poses = Yu.fkine_all(q)
-
+    #print(poses)
 
     for pose in (poses):
         pose_list.append(np.array(pose))  
 
     #print(trafo_p)
     rf_p = pose_list[joint_num+1] @ trafo_p @ np.array([0, 0, 0, 1]) # Position vector of p in RF0
+    #print(f'pose transformation from RF0 to joint {joint_num+1}: \n{pose_list[joint_num+1]}\n')
+    #print(f'trafo from RF{joint_num+1} to p:\n {trafo_p}')
+    #print(f'position vector of p on joint {joint_num+1} in RF0: {rf_p}')
 
     for count in range(joint_num+1):
         translation = rf_p - pose_list[count] @ np.array([0, 0, 0, 1])
         translation = translation[:3]
         rotation = pose_list[count] @ np.array([0, 0, 1, 0])
         rotation = rotation[:3]
-        joint_jacobian[:3, count] = np.cross(rotation ,translation)
+        joint_jacobian[:3, count] = np.cross(rotation, translation)
         joint_jacobian[3:6, count] = rotation
 
-    lin_ang = joint_jacobian @ qd[:joint_num+1] # velocity[t, :joint_num+1]
+    #print(f'modified jacobian for joint {joint_num+1}:\n{joint_jacobian}\n')
+    lin_ang = joint_jacobian @ qd # velocity[t, :joint_num+1]
     lin_vel = lin_ang[:3]
-    #print(lin_vel)
+    #print(f'linear velocity of p on joint {joint_num+1}: {lin_vel}\n')
     length = np.linalg.norm(lin_vel, 2)
     if length <= 1e-3:
         vel_u = np.zeros(3)
     else:
         vel_u = np.divide(lin_vel, (np.linalg.norm(lin_vel, 2)))
 
+    
+    """
     fkine_ee = pose_list[-1]
     r6_0 = fkine_ee[:, -1]
     #print(rf_p)
@@ -90,11 +96,17 @@ def unit_vector(q, point, joint_num, t, qd): # angle and velocity matrix should 
     trafo_6p = np.eye(4)
     trafo_6p[:3, -1] = r6p_0[:3]
     #print(trafo_6p)
-
     Yu.tool = trafo_6p
     jacobian_p = Yu.jacob0(q)
+    """
+
     M_q = Yu.inertia(q)
-    Aq_inv = jacobian_p @ np.linalg.inv(M_q) @ np.transpose(jacobian_p)
+
+    Aq_inv = joint_jacobian @ np.linalg.inv(M_q) @ np.transpose(joint_jacobian)
+    print(Aq_inv)
+    print(joint_jacobian)
+    print(f'Aq_inv matrix for joint {joint_num+1}: \n{Aq_inv[:3, :3]}\n')
+    print(f'unit vector for p on joint {joint_num+1}: {vel_u}\n')
     #print(jacobian_p)
     #print(f'vel = {vel_u}\n')
     if all(element == 0 for element in vel_u):
@@ -114,7 +126,7 @@ lin_vel = np.zeros((6, 3, 201))
 rf_p_storage = np.zeros((6, 3, 201))
 
 
-for t in range(201):
+for t in range(8,9):
     q = angle[:, t]
     qd = velocity[:, t]
 
@@ -125,12 +137,16 @@ for t in range(201):
         m_refl[count, t] = result[1]
         rf_p_storage[count, :, t] = result[3][:3]
 
-n = 4
+n = 5
 print(m_refl[n, :])
-#print(lin_vel[3, :, :])
+#print(lin_vel[n, :, :])
+vel_abs = np.linalg.norm(lin_vel[n, :, :], axis=0)
+#print(vel_abs)
 refl_max = np.argmax(m_refl[n, :])
-print(refl_max)
-print(m_refl[n, refl_max])
+#print(refl_max)
+#print(m_refl[n, refl_max])
+momentum = np.multiply(vel_abs, m_refl[n, :])
+print(momentum)
 ax = plt.axes(111, projection='3d')
 
 lin_vel_plot = lin_vel[n, :, :]
