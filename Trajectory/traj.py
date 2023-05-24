@@ -50,7 +50,20 @@ def generate_traj_time(traj_time, step):
     return tg1, tg2, tg3, tg4, tg5, tg6, t
 """
 
-def generate_traj_time(traj_time, step):
+def generate_traj_time(traj_time, step, start_config, end_config):
+    #Yu = rtb.models.DH.Yu()
+    t = np.linspace(0, traj_time, step)
+    tg1 = tools.trapezoidal(start_config[0], end_config[0], t)
+    tg2 = tools.trapezoidal(start_config[1], end_config[1], t)
+    tg3 = tools.trapezoidal(start_config[2], end_config[2], t)
+    tg4 = tools.trapezoidal(start_config[3], end_config[3], t)
+    tg5 = tools.trapezoidal(start_config[4], end_config[4], t)
+    tg6 = tools.trapezoidal(start_config[5], end_config[5], t)
+
+    return tg1, tg2, tg3, tg4, tg5, tg6, t, step
+
+"""
+def generate_traj_time(traj_time, step, start_config, end_config):
     #Yu = rtb.models.DH.Yu()
     t = np.linspace(0, traj_time, step)
     tg1 = tools.trapezoidal(-pi, 0, t)
@@ -61,7 +74,7 @@ def generate_traj_time(traj_time, step):
     tg6 = tools.trapezoidal(0, -pi, t)
 
     return tg1, tg2, tg3, tg4, tg5, tg6, t
-
+"""
 """
 
 p1 = 5

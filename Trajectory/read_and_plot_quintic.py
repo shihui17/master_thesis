@@ -17,8 +17,10 @@ result_q = np.loadtxt("result_q.txt")
 result_qd = np.loadtxt("result_qd.txt")
 result_qdd = np.loadtxt("result_qdd.txt")
 time_vec = np.loadtxt("time_vec.txt")
-traj = generate_traj_time(2, 201)
-q_end = np.array([pi, -0.749*pi, 0.689*pi, 0.444*pi, -0.8*pi, -pi])
+start = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
+end = np.array([0, -0.749*pi, 0.69*pi, 0.444*pi, -0.8*pi, -pi])
+traj = generate_traj_time(2, 201, start, end)
+q_end = end
 qd_end = np.zeros(6)
 qdd_end = np.zeros(6)
 
