@@ -232,32 +232,9 @@ def heuristic_kalman(N, Nbest, n, sample_num, joint):
                     qdd2 = assble_qdd[i, j] # end qdd for lerp
                     qd1 = result_qd[sn, j]
                     qd2 = assble_qd[i, j]
-                    #print(assble_qdd)
-                    #print(f'arguments for lerp: t1 = {t1}, t2 = {t2}, qdd1 = {qdd1}, qdd2 = {qdd2}\n')
                     qdd_sample[j, :] = [lerp_func(t1, t2, qdd1, qdd2, t) for t in t_val]
                     qd_sample[j, :] = [lerp_func_integral(t1, t2, qdd1, qdd2, t, result_qd[sn, j]) for t in t_val] # initial condition: qd0 = result_qd[sn, j], qd from previous time step
-                    #qd_compare.append(simpson(qdd_sample[j, :], t_val))
                     q_sample[j, :] = [lerp_func_double_integral(t1, t2, qdd1, qdd2, t, result_qd[sn, j], result_q[sn, j]) for t in t_val] # qd0, q0 from result_qd, result_q
-                    #for ii, t in enumerate(t_val):
-                    #    index = np.where(np.round(joint[6], 2) == np.round(t, 2))
-                        #print(np.round(t,2))
-                        #print(index)
-                        #print(joint[j].q[index[0]])
-                    #    q_ref[j, ii] = joint[j].q[index[0]]
-                    
-                    #test_list = [t1, t2, qdd1, qdd2, result_q[sn, j], q_sample[j, :]]
-                    #q_list.append(test_list)
-
-                    """
-                    lerp = interp1d(x, y)
-                    time_sample = np.linspace(t1, t2, num=width)
-                    qdd_sample[j, :] = lerp(time_sample)
-                    qd_integral, error = quad(lerp, t1, t2)
-                    qd_sample[j, :] = np.cumsum(qdd_sample[j, :]) * (time_sample[1] - time_sample[0])
-                    #qd_sample[j, :] = [x+result_qd[sn, j] for x in qd_sample[j, :]]
-                    q_sample[j, :] = np.cumsum(qd_sample[j, :]) * (time_sample[1] - time_sample[0])
-                    #q_sample[j, :] = [x+result_q[sn, j] for x in q_sample[j, :]]
-                    """
                 
                 cal_tau_qdd = np.transpose(qdd_sample) # qdd matrix for torque calculation, has a dimension of Width x 6
                 cal_tau_qd = np.transpose(qd_sample)

@@ -43,9 +43,6 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
     asm_q = np.zeros((N, n))
     asm_qd = np.zeros((N, n))
     asm_qdd = np.zeros((N, n))
-    q_trace = np.zeros((sample_num, 6, 50))
-    qd_trace = np.zeros((6, 6, 50))
-    qdd_trace = np.zeros((6, 6, 50))
     t_trace = []
     result_q = np.zeros((sample_num+2, 6))
     result_qd = np.zeros((sample_num+2, 6))
@@ -54,15 +51,19 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
     array_qd = np.zeros(6)
     array_qdd = np.zeros(6)
     time = traj[6]
+    width = 50 # number of increments between two control points for energy calculation. width = 50 delivers similar accuracy to numerical integration methods like Simpson
     tolerance_band = np.zeros((2, 201, 6))
     upper_bound = np.zeros(6)
     lower_bound = np.zeros(6)
+    discrete_q = np.zeros((6, width))
+    discrete_qd = np.zeros((6, width))
+    discrete_qdd = np.zeros((6, width))
 
     for i in range(6): # generate tolerance band for all joints
         angle = traj[i].q
         velocity = traj[i].qd
-        upper = create_tolerance_bands(angle, velocity, time, 0.9, "upper") # see tolerance.py
-        lower = create_tolerance_bands(angle, velocity, time, 0.9, "lower")
+        upper = create_tolerance_bands(angle, velocity, time, 0.7, "upper") # see tolerance.py
+        lower = create_tolerance_bands(angle, velocity, time, 0.7, "lower")
         tolerance_band[0, :, i] = upper[1]
         tolerance_band[1, :, i] = lower[1]
 
@@ -123,7 +124,6 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
         print(f'Lower bound = {lower_bound}\nUpper bound = {upper_bound}\n')
 
         while iter <= 150: # begin kalman iteration
-            width = 50 # number of increments between two control points for energy calculation. width = 50 delivers similar accuracy to numerical integration methods like Simpson
             qdd_sample = np.zeros((N, 6, width))
             qd_sample = np.zeros((N, 6, width))
             q_sample = np.zeros((N, 6, width))
@@ -202,6 +202,7 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
             post_qd = np.zeros((Nbest, 6))
             post_qdd = np.zeros((Nbest, 6))
             num_array = sorted_energy_val['Number']
+
             for i in range(Nbest): # Consider the Nbest candidates
                 num = num_array[i] # returns the index for num-th best candidate
                 post_q[i, :] = asm_q[num, :] # place the num th row of the assembled q-matrix onto the i-th row of the post_q matrix
@@ -233,19 +234,22 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
 
             iter = iter + 1      
 
-        result_q[sn+1, :] = asm_q[num_array[0], :]
-        result_qd[sn+1, :] = asm_qd[num_array[0], :]
-        result_qdd[sn+1, :] = asm_qdd[num_array[0], :]
-        print(result_qdd)
+        result_q[sn+1, :] = asm_q[num_array[0], :] # the result calculated by HKA is written to the result matrix
+        result_qd[sn+1, :] = asm_qd[num_array[0], :] # the result calculated by HKA is written to the result matrix
+        result_qdd[sn+1, :] = asm_qdd[num_array[0], :] # the result calculated by HKA is written to the result matrix
+
+        if sn == 0: # store optimized q, qd, qdd data at every time increment for plotting
+            discrete_q = q_sample[num_array[0]]
+            discrete_qd = qd_sample[num_array[0]]
+            discrete_qdd = qdd_sample[num_array[0]]
+        else:  # store optimized q, qd, qdd data at every time increment for plotting
+            discrete_q = np.hstack((discrete_q, q_sample[num_array[0]]))
+            discrete_qd = np.hstack((discrete_qd, qd_sample[num_array[0]]))
+            discrete_qdd = np.hstack((discrete_qdd, qdd_sample[num_array[0]]))
+
         energy_total = energy_total + energy_val[num_array[0]]['Energy']
         print(f'post acceleration matrix post_qdd = \n{post_qdd}\nwith a variance of {var_qdd_post}\nmean = {mu_qdd_meas}\n\n')
-
-        for joint_num in range(6):
-            q_trace[sn, joint_num, :] = q_sample[num_array[0], joint_num, :]
-            qd_trace[sn, joint_num, :] = qd_sample[num_array[0], joint_num, :]
-            qdd_trace[sn, joint_num, :] = qdd_sample[num_array[0], joint_num, :]
-
-        t_trace.append(t_eval)
+        t_trace.append(t_eval) # store time array for plotting, this is different from the original trajectory time array because new time arrays are generated for each spline interpolation
         print(f'Energy consumption converges at {asm_qdd[num_array[0], :]} 1/s^2\n\nJoint config: {asm_q[num_array[0], :]} total energy consumption: {energy_val[num_array[0]]} J\n')
 
     for joint_num in range(6): # write end angle, velocity and acceleration in result matrices
@@ -253,97 +257,79 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
         result_qd[-1, joint_num] = traj[joint_num].qd[-1]
         result_qdd[-1, joint_num] = traj[joint_num].qdd[-1]
 
-    time_vec = np.append(time_vec, traj[6][-1])
-    print(f'Optimization ended.\nOriginal energy consumption of the given trajectory is: {energy_og_total} J.\nTotal energy consumption of the optimizied trajectory is: {energy_total} J.\n')
-    print(result_qdd)
+    time_vec = np.append(time_vec, traj[6][-1]) # write trajectory end time to time vector
 
+    # Below the trajectory and energy consumption between the last two control points (from last sample point to the end of trajectory) are calculated and saved for plotting
+    t_array = time_vec[-2:] # last two control points
+    t_eval = np.linspace(t_array[0], t_array[1], width) # time array for evaluation, width = 50
+    t_trace.append(t_eval) # store time array for plotting, this is different from the original trajectory time array because new time arrays are generated for each spline interpolation
+    t_trace = np.concatenate(t_trace) # convert list to array for plotting
+    #print(t_trace)
+    q_last = np.zeros((6, width)) # q-array between last two control points
+    qd_last = np.zeros((6, width))
+    qdd_last = np.zeros((6, width))
+
+    for joint_num in range(6): # one more interpolation between last two control points, no HKA is needed because target positions are predetermined (i.e. robot should always reach the original target)
+        y1 = np.array([result_q[-2, joint_num], result_qd[-2, joint_num], result_qdd[-2, joint_num]]) # the angle, velocity and acceleration of previous point
+        y2 = np.array([result_q[-1, joint_num], result_qd[-1, joint_num], result_qdd[-1, joint_num]]) # angle, velocity, acceleration of current point
+        yi = np.vstack((y1, y2)) # vertical stack for interpolation with Berstein Polynomials
+        q_bpoly = BPoly.from_derivatives(t_array, yi) # interpolation between previous and current point
+        q_last[joint_num, :] = q_bpoly(t_eval) # angular trajectory
+        qd_last[joint_num, :] = q_bpoly.derivative()(t_eval) # velocity trajectory
+        qdd_last[joint_num, :] = q_bpoly.derivative(2)(t_eval) # acceleration trajectory      
+
+    discrete_q = np.hstack((discrete_q, q_last)) # now we complete the entire optimized trajectory
+    discrete_qd = np.hstack((discrete_qd, qd_last))
+    discrete_qdd = np.hstack((discrete_qdd, qdd_last))
+
+    q_torque_calc = np.transpose(q_last) # transpose for torque calculation
+    qd_torque_calc = np.transpose(qd_last)
+    qdd_torque_calc = np.transpose(qdd_last)
+    power_val = [] # new initialization of power output list
+    for k in range(width):
+        torq_vec = cal_tau(q_torque_calc[k, :], qd_torque_calc[k, :], qdd_torque_calc[k, :]) # calculate torque
+        velocity_vec = qd_torque_calc[k, :] # read velocity
+        power_val.append(abs(np.linalg.norm(np.multiply(torq_vec, velocity_vec), 1))) # element-wise multiplication, then take 1-Norm to get robot power output
+
+    energy_total_intv = simpson(power_val, t_eval) # integrate power over time to get energy using Simpson method
+    energy_total = energy_total + energy_total_intv # the final total energy consumption over the entire trajectory
+
+    # Below the original energy consumption is calculated based on the original trajectory
+    time_interval_last = time[ctr:] # time array between last two control points based on time array of the original traj
+    q_interval_last = np.zeros((6, len(time_interval_last))) 
+    qd_interval_last = np.zeros((6, len(time_interval_last)))
+    qdd_interval_last = np.zeros((6, len(time_interval_last)))
+
+    for joint_num in range(6): # slice the last section (between last two control points) off of the original trajectory
+        q_interval_last[joint_num, :] = traj[joint_num].q[ctr:]
+        qd_interval_last[joint_num, :] = traj[joint_num].qd[ctr:]
+        qdd_interval_last[joint_num, :] = traj[joint_num].qdd[ctr:]
+
+    q_torque_calc = np.transpose(q_interval_last) # transpose for torque calculation
+    qd_torque_calc = np.transpose(qd_interval_last)
+    qdd_torque_calc = np.transpose(qdd_interval_last)
+
+    power_val = [] # new initialization of power output again
+    for k in range(len(time_interval_last)):
+        torq_vec = cal_tau(q_torque_calc[k, :], qd_torque_calc[k, :], qdd_torque_calc[k, :]) # calculate torque
+        velocity_vec = qd_torque_calc[k, :] # read velocity
+        power_val.append(abs(np.linalg.norm(np.multiply(torq_vec, velocity_vec), 1))) # element-wise multiplication, then take 1-Norm to get robot power output
+    energy_og_last = simpson(power_val, time_interval_last)
+    energy_og_total = energy_og_total + energy_og_last # the total energy consumption over the entire original trajectory
+
+    print(f'Optimization ended.\nOriginal energy consumption of the given trajectory is: {energy_og_total} J.\nTotal energy consumption of the optimizied trajectory is: {energy_total} J.\n')
     np.savetxt("result_q.txt", result_q)
     np.savetxt("result_qd.txt", result_qd)
     np.savetxt("result_qdd.txt", result_qdd)
     np.savetxt("time_vec.txt", time_vec)
+    np.savetxt("t_trace.txt", t_trace)
+    np.savetxt("discrete_q.txt", discrete_q)
+    np.savetxt("discrete_qd.txt", discrete_qd)
+    np.savetxt("discrete_qdd.txt", discrete_qdd)
 
-    return result_q, result_qd, result_qdd, time_vec, traj, q_trace, t_trace, qd_trace, qdd_trace
+    return result_q, result_qd, result_qdd, time_vec, traj, discrete_q, discrete_qd, discrete_qdd, t_trace
 
 start = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
 end = np.array([0, -0.749*pi, 0.69*pi, 0.444*pi, -0.8*pi, -pi])
 traj = generate_traj_time(2, 201, start, end)
-print(traj[6])
-time = traj[6]
-print(time[-1])
-results = tolerance_band_diff(50, 5, 6, 6, traj)
-"""
-result_q = results[0]
-result_qd = results[1]
-result_qdd = results[2]
-
-xi = results[3]
-
-
-#print(xi)
-for joint_num in range(6):
-    y = result_q[:, joint_num]
-    yd = result_qd[:, joint_num]
-    ydd = result_qdd[:, joint_num]
-    yi = np.vstack((y, yd, ydd))
-    yi = np.transpose(yi)
-    #print(yi)
-
-    func = BPoly.from_derivatives(xi, yi)
-    t_evaluate = np.linspace(xi[0], xi[-1], num=200)
-    q_p[joint_num, :] = func(t_evaluate)
-    qd_p[joint_num, :] = func.derivative()(t_evaluate)
-    qdd_p[joint_num, :] = func.derivative(2)(t_evaluate)
-
-    time = np.array(results[6])
-    q_org = results[4][0].q
-    qd_org = results[4][0].qd
-    qdd_org = results[4][0].qdd
-    time1 = results[4][6]
-
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
-
-ax1.plot(time1, q_org)
-ax1.plot(t_evaluate, q_p)
-
-ax2.plot(time1, qd_org)
-ax2.plot(t_evaluate, qd_p)
-
-ax3.plot(time1, qdd_org)
-ax3.plot(t_evaluate, qdd_p)
-plt.show()
-
-"""
-
-
-# Below is a whole section of image output....
-"""
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
-ax1.plot(time, joint[0].q, label='original joint1', color='red')
-ax1.plot(upper[0], tolerance_band[0, :, 0], label='tolerance band', linestyle='dashed', color='green')
-ax1.plot(upper[0], tolerance_band[1, :, 0], linestyle='dashed', color='green')
-ax1.legend()
-ax2.plot(time, joint[1].q, label='original joint2', color='red')
-ax2.plot(upper[0], tolerance_band[0, :, 1], label='tolerance band', linestyle='dashed', color='green')
-ax2.plot(upper[0], tolerance_band[1, :, 1], linestyle='dashed', color='green')
-ax2.legend()
-ax3.plot(time, joint[2].q, label='original joint3', color='red')
-ax3.plot(upper[0], tolerance_band[0, :, 2], label='tolerance band', linestyle='dashed', color='green')
-ax3.plot(upper[0], tolerance_band[1, :, 2], linestyle='dashed', color='green')
-ax3.legend()
-
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
-ax1.plot(time, joint[3].q, label='original joint1', color='red')
-ax1.plot(upper[0], tolerance_band[0, :, 3], label='tolerance band', linestyle='dashed', color='green')
-ax1.plot(upper[0], tolerance_band[1, :, 3], linestyle='dashed', color='green')
-ax1.legend()
-ax2.plot(time, joint[4].q, label='original joint2', color='red')
-ax2.plot(upper[0], tolerance_band[0, :, 4], label='tolerance band', linestyle='dashed', color='green')
-ax2.plot(upper[0], tolerance_band[1, :, 4], linestyle='dashed', color='green')
-ax2.legend()
-ax3.plot(time, joint[5].q, label='original joint3', color='red')
-ax3.plot(upper[0], tolerance_band[0, :, 5], label='tolerance band', linestyle='dashed', color='green')
-ax3.plot(upper[0], tolerance_band[1, :, 5], linestyle='dashed', color='green')
-ax3.legend()
-
-plt.show()
-"""
+results = tolerance_band_diff(30, 3, 6, 6, traj)

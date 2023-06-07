@@ -218,19 +218,19 @@ def hka_profile_opt(N, Nbest, traj):
 
     return result_q, result_qd, result_qdd
 
-start = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
-end = np.array([0, -0.749*pi, 0.69*pi, 0.444*pi, -0.8*pi, -pi])
+start = np.array([0.32*pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
+end = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
 traj = generate_traj_time(2, 201, start, end)
 hka_profile_opt(30, 3, traj)
 
-"""
+
 decision = 1
 if decision == 1:
     for j in range(6):
         result_q = np.loadtxt('prof_result_q.txt')
         result_qd = np.loadtxt('prof_result_qd.txt')
         result_qdd = np.loadtxt('prof_result_qdd.txt')
-        joint_data = generate_traj_time(4, 201)
+        joint_data = traj
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
         ax1.plot(joint_data[6], result_q[j, :], label=f'optimized traj for joint {j+1}', color='green')
         ax1.plot(joint_data[6], joint_data[j].q, label=f'orignal traj for joint {j+1}', color='red')
@@ -247,6 +247,5 @@ if decision == 1:
         ax3.set_ylabel('Joint acceleration in rad/s^2')
         fig.suptitle(f"Trajectory for Joint {j+1}", fontsize=16)
         
-        fig.savefig(f'C:\Codes\master_thesis\Trajectory\Figures\Profile_optimization/prof_opt_joint{j+1}.png')
+        #fig.savefig(f'C:\Codes\master_thesis\Trajectory\Figures\Profile_optimization/prof_opt_joint{j+1}.png')
         plt.show()
-"""

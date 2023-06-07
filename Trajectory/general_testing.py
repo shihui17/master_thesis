@@ -31,9 +31,6 @@ print(t1)
 print(t2)
 """
 Yu = rtb.models.DH.Yu()
-q = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
-
-Aq_inv = np.array([[1.11636216e-02,  3.15644807e-05, -5.69466554e-24], [3.15644807e-05,  8.92467044e-08, -1.61013304e-26], [-5.69466554e-24, -1.61013304e-26,  6.14284824e-34]])
-vel_u = np.array([-0.999996,   -0.00282743,  0.        ])
-
-print(1/(vel_u @ Aq_inv @ vel_u))
+q = np.array([0, -pi/2, 0, 0, 0, 0])
+T_0e = Yu.fkine(q)
+print(T_0e)
