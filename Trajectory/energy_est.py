@@ -9,6 +9,8 @@ def calculate_energy(q_torq, qd_torq, qdd_torq, time):
         torq_vec = cal_tau(q_torq[i, :], qd_torq[i, :], qdd_torq[i, :])
         vel_vec = qd_torq[i, :]
         power_vec = np.linalg.norm(np.multiply(torq_vec, vel_vec), 1)
-        power_val.append(power_vec)           
+        power_val.append(power_vec)
+    power = np.array(power_val)
+    np.savetxt("orig_power.txt", power)           
     energy = simpson(power_val, time)
     return energy

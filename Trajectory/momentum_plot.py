@@ -8,7 +8,7 @@ The following data sets are plotted:
     - the momentum vectors with respect to robot center of mass in cartesian space
     - the momentum curve over trajectory time, with respect to robot center of mass
 '''
-
+from math import pi
 import roboticstoolbox as rtb
 import numpy as np
 from traj import generate_traj_time
@@ -172,10 +172,10 @@ def calculate_momentum(traj):
     for i in range(len(lin_max)):
     #for i in range(5):
         if i == 0:
-            ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, label='Momentum vector of robot on its center of mass')
+            ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.1*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, label='Momentum vector of robot on its center of mass')
         elif i % 4 == 0:
         #ax.quiver(start[i, 0], start[i, 1], start[i, 2], lin_max[i, 0], lin_max[i, 1], lin_max[i, 2], arrow_length_ratio=0.01, length=np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True')
-            ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05)#length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, color='blue')
+            ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.1*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05)#length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, color='blue')
         #ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_max[i, 0], lin_max[i, 1], lin_max[i, 2], arrow_length_ratio=0.01, length=np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True')
     #plt.show()
     ax.legend()
@@ -201,8 +201,23 @@ def calculate_momentum(traj):
     plt.show()
 
     return 
+start1 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end1 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 
-traj = generate_traj_time(2.5, 201)
+start2 = np.array([pi/2, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end2 = np.array([pi, -pi, 0, pi/4, -pi/2, pi])
+
+start3 = np.array([0, 0, 0, 0, 0, 0])
+end3 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+
+start4 = np.array([pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end4 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
+
+start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
+
+#end = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
+traj = generate_traj_time(2, 201, start1, end1)
 calculate_momentum(traj)
 
 """        

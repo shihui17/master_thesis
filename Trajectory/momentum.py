@@ -1,3 +1,11 @@
+'''
+@author: Shihui Liu
+
+The function total_center_of_mass() calculates the position of the center of mass of the whole robot in cartesian space.
+Returns optimized trajectories and optimized energy consumption.
+Results are additionally saved to result_q.txt, result_qd.txt and result_qdd.txt in root directory.
+'''
+
 from math import pi
 import roboticstoolbox as rtb
 import numpy as np

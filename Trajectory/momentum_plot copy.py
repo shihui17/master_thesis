@@ -123,8 +123,24 @@ velocity_og = np.zeros((201, 6))
 accel_og = np.zeros((201, 6))
 Yu = rtb.models.DH.Yu()
 
+start1 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end1 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 
-traj = generate_traj_time(2.5, 201)
+start2 = np.array([pi/2, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end2 = np.array([pi, -pi, 0, pi/4, -pi/2, pi])
+
+start3 = np.array([0, 0, 0, 0, 0, 0])
+end3 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+
+start4 = np.array([pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end4 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
+
+start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
+
+#end = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
+traj = generate_traj_time(2, 201, start1, end1)
+
 for j in range(6):
     angle_og[:, j] = traj[j].q
     velocity_og[:, j] = traj[j].qd
@@ -148,13 +164,19 @@ max_joint_og = result_og[4]
 
 
 xline1 = T_cm_og[:, 0]
+np.savetxt("x_orig.txt", xline1)
 print(T_cm_og)
 print(T_cm)
 yline1 = T_cm_og[:, 1]
+np.savetxt("y_orig.txt", yline1)
 zline1 = T_cm_og[:, 2]
+np.savetxt("z_orig.txt", zline1)
 xline2 = T_cm[:, 0]
+np.savetxt("x_opt.txt", xline2)
 yline2 = T_cm[:, 1]
+np.savetxt("y_opt.txt", yline2)
 zline2 = T_cm[:, 2]
+np.savetxt("z_opt.txt", zline2)
 
 
 ax = plt.axes(111, projection='3d')

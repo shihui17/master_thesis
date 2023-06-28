@@ -22,7 +22,7 @@ def kalman_gain(sig, var_post, mu, mu_meas):
     mu_post = mu + np.multiply(L, (mu_meas - mu)) # post mean
     P = np.square(sig) - np.multiply(L, np.square(sig)) # post covariance
     s = np.min([1, np.mean(np.sqrt(var_post))])
-    a = 0.8 * (s**2 / (s**2 + np.max(P))) # slowdown factor to slow down the convergence, coefficient (in this case 0.6) can vary (see HKA book)
+    a = 0.8 * (s**2 / (s**2 + np.max(P))) # slowdown factor to slow down the convergence, coefficient (in this case 0.8) can vary (see HKA book)
     #print(P)
     #print(var_q_post)
     sig_new = sig + a * (np.sqrt(P) - sig) # set new std. deviation

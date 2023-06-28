@@ -10,7 +10,7 @@ from roboticstoolbox import tools as tools
 from call_tau import *
 from scipy.interpolate import CubicHermiteSpline, BPoly, interp1d
 from traj import *
-
+import matplotlib.pyplot as plt
 
 def create_tolerance_bands(angle, velocity, time, width, upper_lower):
     """
@@ -26,6 +26,9 @@ def create_tolerance_bands(angle, velocity, time, width, upper_lower):
     tf = time[-1] # end of trajectory
     q0 = angle[0] # initial angle
     qf = angle[-1] # end angle
+    if q0 == qf:
+        return False
+
     V = (qf - q0) / tf * 1.5 # according to tools.trapezoidal in roboticstoolbox
     t_accel = np.round((q0 - qf + V * tf) / V, 2) # end of acceleration, rounded to 2 decimals to exactly match the time points in joint_data[6]
     t_brake = np.round(tf - t_accel, 2) # start of braking
@@ -96,34 +99,51 @@ def create_tolerance_bands(angle, velocity, time, width, upper_lower):
 
     return t_total, angle_bound, t_accel, t_brake
 
-"""
-upper = create_tolerance_bands(angle, velocity, time, 0.001, "upper")
-lower = create_tolerance_bands(angle, velocity, time, 0.001, "lower")
-#print(upper[1])
+start1 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end1 = np.array([pi, -pi/3, pi/3, -5*pi/6, -0.58*pi, -0.082*pi])
 
-#print(lower[1])
-joint = generate_traj_time(2,201)
-tolerance_band = np.zeros((2, 100*2+1, 6))
+start2 = np.array([pi/2, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end2 = np.array([pi, -pi, 0, pi/4, -pi/2, pi])
+
+start3 = np.array([0, 0, 0, 0, 0, 0])
+end3 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+
+start4 = np.array([pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end4 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
+
+start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
+
+#start = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
+#end = np.array([0, -0.749*pi, 0.69*pi, 0.444*pi, -0.8*pi, -pi])
+
+joint = generate_traj_time(2, 201, start1, end1)
+tolerance_band = np.zeros((6, 2, 201))
 upper_bound = np.zeros(6)
-for i in range(6): # generate tolerance band for all joints
+time = joint[6]
+
+for i in range(1): # generate tolerance band for all joints
     angle = joint[i].q
     velocity = joint[i].qd
     upper = create_tolerance_bands(angle, velocity, time, 0.65, "upper")
     #print(upper[1])
     lower = create_tolerance_bands(angle, velocity, time, 0.65, "lower")
-    tolerance_band[0, :, i] = upper[1]
-    tolerance_band[1, :, i] = lower[1]
+    tolerance_band[i, 0, :] = upper[1]
+    tolerance_band[i, 1, :] = lower[1]
 
-plt.plot(time, joint[5].q, label='Original joint trajectory', color='r')
-plt.plot(upper[0], tolerance_band[0, :, 5], label='Tolerance band', linestyle='dashed', color='green')
-plt.plot(upper[0], tolerance_band[1, :, 5], linestyle='dashed', color='green')
+np.savetxt("upper_tolerance.txt", upper[1])
+np.savetxt("lower_tolerance.txt", lower[1])
+np.savetxt("tolerance_band_time.txt", upper[0])
+
+plt.plot(time, joint[0].q, label='Original joint trajectory', color='r')
+plt.plot(upper[0], tolerance_band[0, 0, :], label='Tolerance band', linestyle='dashed', color='green')
+plt.plot(upper[0], tolerance_band[0, 1, :], linestyle='dashed', color='green')
 plt.legend(fontsize=9)
 plt.xlabel('Trajectory time in s', fontsize=10, labelpad=4)
 plt.ylabel('Joint angle in rad', fontsize=10, labelpad=4)
 plt.xticks(fontsize=9)
 plt.yticks(fontsize=9)
 plt.show()
-"""
 """
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
 ax1.plot(time, joint[0].q, label='original joint1', color='red')
