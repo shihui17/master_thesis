@@ -125,7 +125,7 @@ def hka_profile_opt(N, Nbest, traj, start_joint_config, end_joint_config):
         sig_t = new_mu_sig_t[1] # new std.dev.
         print(f'the diagonal of the covariance matrix:\n{var_t_rand}')
 
-        if var_t_rand < 1e-5: # convergence criterion
+        if var_t_rand < 1e-4: # convergence criterion
             print(f'exited HKA at iter = {iter}')
             break
         

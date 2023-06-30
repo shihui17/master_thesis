@@ -41,7 +41,6 @@ def total_center_of_mass(position_mass, mass_vec, time_step):
     return np.array([Xcm, Ycm, Zcm])
 
 def calculate_momentum(traj):
-
     """
     does some momentum related calculations given a robot trajectory class, can return following calculation results as required:
         - max_momentum: the maximum momentum that occurs during trajectory time, with respect to robot center of mass and RF0
@@ -124,26 +123,7 @@ def calculate_momentum(traj):
 
     max_mmt = np.amax(mmt_abs, axis=1)
     max_joint = np.argmax(max_mmt)
-    #max_joint_mmt = np.max(max_mmt)
-    #print(max_mmt)
     lin_max = np.transpose(lin_momentum[max_joint, :, :])
-    #print(lin_max)
-    
-    """
-    v_ee = v_ee[:3, :]
-    v_ee = np.transpose(v_ee)
-    v_abs = np.linalg.norm(v_ee, 2, axis=1)
-    print(v_ee)
-    print(v_abs)
-    print(np.max(v_abs))
-    """
-#xline = position_mass[max_joint, 0, :]
-#yline = position_mass[max_joint, 1, :]
-#zline = position_mass[max_joint, 2, :]
-#print(lin_vel[max_joint, :, :])
-
-
-
     xline = lin_max[:, 0]
     yline = lin_max[:, 1]
     zline = lin_max[:, 2]
@@ -156,19 +136,12 @@ def calculate_momentum(traj):
 
 
     ax = plt.axes(111, projection='3d')
-    #ax.set_xlim([-8, 8])
-    #ax.set_ylim([-8, 8])
-    #ax.set_zlim([-1, 1])
     ax.set_xlabel('x coordinate in m')
     ax.set_ylabel('Y coordinate in m')
     ax.set_zlabel('Z coordinate in m')
-    #ax.plot3D(xline, yline, zline)
-    #ax.plot3D(xline1, yline1, zline1, color='blue')
     ax.plot3D(xline2, yline2, zline2, color='red', linewidth=1, label='Trajectory of center of mass')
     plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/mass_traj.png')
     start = np.transpose(position_mass[max_joint, :, :])
-    #print(start)
-    #print(np.round(lin_max, 2))
     for i in range(len(lin_max)):
     #for i in range(5):
         if i == 0:
@@ -177,21 +150,13 @@ def calculate_momentum(traj):
         #ax.quiver(start[i, 0], start[i, 1], start[i, 2], lin_max[i, 0], lin_max[i, 1], lin_max[i, 2], arrow_length_ratio=0.01, length=np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True')
             ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_momentum_total[0, i], lin_momentum_total[1, i], lin_momentum_total[2, i], color='green', length=0.1*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05)#length=0.01*np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True', arrow_length_ratio=0.05, color='blue')
         #ax.quiver(T_cm[i, 0], T_cm[i, 1], T_cm[i, 2], lin_max[i, 0], lin_max[i, 1], lin_max[i, 2], arrow_length_ratio=0.01, length=np.linalg.norm((start[i, :]-lin_max[i, :]), 2), normalize='True')
-    #plt.show()
     ax.legend()
     plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/momentum_traj.png')
-    #print(lin_momentum_total)
     result = np.linalg.norm(lin_momentum_total, 2, axis=0)
-    #print(result)
     max = np.max(result)
     argmax = np.argmax(result)
     t_max = traj[6][argmax]
-    #plt.plot(traj[6], result)
     plt.show()
-    #for joint_num in range(6):
-        #for joint 6:
-    #translation = pose_list[5] @ np.array([0, 0, 0, 1])
-    #print(translation)
     plt.plot(traj[6], result)
     plt.plot(t_max, max, marker='o', markeredgecolor='blue')
     plt.xlabel('Trajectory time in s')
@@ -201,7 +166,8 @@ def calculate_momentum(traj):
     plt.show()
 
     return 
-start1 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+
+start1 = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end1 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 
 start2 = np.array([pi/2, -pi/2, pi/2, -pi/2, -pi/2, 0])
@@ -217,7 +183,7 @@ start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 
 #end = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
-traj = generate_traj_time(2, 201, start1, end1)
+traj = generate_traj_time(0.8, 201, start1, end1)
 calculate_momentum(traj)
 
 """        

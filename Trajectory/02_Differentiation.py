@@ -373,4 +373,4 @@ start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 
 traj = generate_traj_time(2, 201, start1, end1)
-results = tolerance_band_diff(30, 3, 6, 6, traj)
+results = tolerance_band_diff(30, 4, 6, 6, traj)

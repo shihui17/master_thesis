@@ -1,3 +1,7 @@
+"""
+Plots the original total lin momentum and the optimized total lin momentum according to reflected mass optimization
+"""
+
 from math import pi
 import roboticstoolbox as rtb
 import numpy as np
@@ -109,21 +113,7 @@ def calculate_momentum(traj, angle, velocity, accel):
 #yline = position_mass[max_joint, 1, :]
 #zline = position_mass[max_joint, 2, :]
 #print(lin_vel[max_joint, :, :])
-mass_vec = np.zeros(6)
-v_ee = np.zeros(201)
-angle = np.loadtxt('mmt_result_q.txt')
-angle = np.transpose(angle)
-velocity = np.loadtxt('mmt_result_qd.txt')
-velocity = np.transpose(velocity)
-accel = np.loadtxt('mmt_result_qdd.txt')
-accel = np.transpose(accel)
-
-angle_og = np.zeros((201, 6))
-velocity_og = np.zeros((201, 6))
-accel_og = np.zeros((201, 6))
-Yu = rtb.models.DH.Yu()
-
-start1 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
+start1 = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end1 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 
 start2 = np.array([pi/2, -pi/2, pi/2, -pi/2, -pi/2, 0])
@@ -138,8 +128,25 @@ end4 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 
-#end = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
-traj = generate_traj_time(2, 201, start1, end1)
+angle = np.zeros((6, 201))
+velocity = np.zeros((6, 201))
+accel = np.zeros((6, 201))
+traj_opt = generate_traj_time(1.36, 201, start1, end1)
+
+for j in range(6): # reads necessary data from the original trajectory
+    angle[j, :] = traj_opt[j].q
+    velocity[j, :] = traj_opt[j].qd
+    accel[j, :] = traj_opt[j].qdd
+
+angle = np.transpose(angle)
+velocity = np.transpose(velocity)
+accel = np.transpose(accel)
+mass_vec = np.zeros(6)
+angle_og = np.zeros((201, 6))
+velocity_og = np.zeros((201, 6))
+accel_og = np.zeros((201, 6))
+Yu = rtb.models.DH.Yu()
+traj = generate_traj_time(0.8, 201, start1, end1)
 
 for j in range(6):
     angle_og[:, j] = traj[j].q
@@ -224,11 +231,14 @@ argmax = np.argmax(result)
 t_max = traj[6][argmax]
 
 result_og = np.linalg.norm(lin_momentum_total_og, 2, axis=0)
+np.savetxt("mmt_og_curve.txt", result_og)
+np.savetxt("mmt_opt_curve.txt", result)
+np.savetxt("mmt_time.txt", traj[6])
 max_og = np.max(result_og)
 argmax_og = np.argmax(result_og)
 t_max_og = traj[6][argmax_og]
 
-plt.plot(traj[6], result, color='green', label='Optimized robot momentum')
+plt.plot(traj_opt[6], result, color='green', label='Optimized robot momentum')
 plt.plot(traj[6], result_og, color='red', label='Original robot momtenum')
 plt.plot(t_max, max, marker='o', markeredgecolor='green', markerfacecolor='green', label='Optimized maximal momentum')
 plt.plot(t_max_og, max_og, marker='o', markeredgecolor='red', markerfacecolor='red', label='Original maximal momentum')
@@ -238,68 +248,3 @@ plt.ylabel('Robot total momentum in kg*m/s')
 plt.legend()
 plt.savefig('C:\Codes\master_thesis\Trajectory\Figures\Momentum/momentum_total.png')
 plt.show()
-
-
-
-
-
-"""        
-poses = Yu.fkine_all([-pi/2, -pi/2, pi/2, -pi/3, -pi/3, 0]) # the pose of each robot joint as SE3
-#print(p1)
-#print(poses)
-z_axis = []
-pos_vec = []
-translation = []
-jacobian = np.zeros((6, 6))
-for pose in poses:
-    pose = np.array(pose)
-    position = pose @ np.array([0, 0, 0, 1])
-    position = position[:3]
-    pos_vec.append(position)
-    R_matrix = pose[:3, :3]
-    rotation = R_matrix @ np.array([0, 0, 1])
-    z_axis.append(rotation)
-    translation.append(np.cross(rotation, position))
-#print(z_axis)
-print(translation)
-for i in range(1, 7):
-    jacobian[i-1, :] = np.hstack((translation[i], z_axis[i]))
-jacobian = np.transpose(np.round(jacobian, 3))
-#print(jacobian)
-#print(jacobian[:, :2])
-qd = np.array([1, 1, 1, 1, 1, 1])
-#print(jacobian[:, :2] @ qd[:2])
-
-
-
-velocity_cartesian = np.zeros((6, 6))
-
-for joint_num in range(6):
-    velocity_cartesian[:, joint_num] = joint_jacobian(jacobian, joint_num, qd)
-
-print(velocity_cartesian)
-"""
-""" 
-    Evaluate each link
-    lin_v = np.zeros((6, 201))
-    for ii in range(6):
-        lin_v[ii, :] = np.linalg.norm(lin_momentum[ii, :, :], axis=0)
-    lin_r = np.linalg.norm(lin_momentum_total, axis=0)
-    print(np.amax(lin_v, axis=1))
-    print(lin_momentum_total)
-    print(lin_r)
-"""
-    
-    #print(np.linalg.norm(lin_momentum, axis=0))
-#print(lin_vel) # this is the matrix for the linear velocity of the center of mass of each link. Momentum can be calculated based on this matrix.
-#print(ang_vel) 
-#lin_momentum_total = np.transpose(lin_momentum_total)
-#print(position_mass)
-#print(T_cm)
-
-
-#plt.show()
-#print(lin_vel[4, :, :])
-#print(np.transpose(lin_momentum[3, :, :]))
-#print(lin_momentum_total)
-#print(mmt_abs)

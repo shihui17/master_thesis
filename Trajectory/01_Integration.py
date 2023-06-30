@@ -429,7 +429,7 @@ end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 #start = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
 #end = np.array([0, -0.749*pi, 0.69*pi, 0.444*pi, -0.8*pi, -pi])
 joint = generate_traj_time(2, 201, start3, end3)
-results = heuristic_kalman(40, 4, 6, 6, joint)
+results = heuristic_kalman(30, 4, 6, 6, joint)
 """
 joint = results[4]
 time = results[3][0:7]
