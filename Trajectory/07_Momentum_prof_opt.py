@@ -268,9 +268,9 @@ def hka_force_opt(N, Nbest, trajectory_data):
     reduced_mass = np.zeros((7, 201))
     equi_contact_force = np.zeros((7, 201))
 
-    K = 75 # Face is smashed against the robot, ouch!
-    F_p = 65 # Face is smashed against the robot, ouch!
-    m_H = 4.4 # Face is smashed against the robot, ouch!
+    K = 35000 # Face is smashed against the robot, ouch!
+    F_p = 210 # Face is smashed against the robot, ouch!
+    m_H = 40 # Face is smashed against the robot, ouch!
     for t in range(201):
 
         q = angle[:, t]
@@ -395,9 +395,9 @@ def hka_force_opt(N, Nbest, trajectory_data):
     result_q = q_mat[num_array[0], :, :]
     result_qd = qd_mat[num_array[0], :, :]
     result_qdd = qdd_mat[num_array[0], :, :]
-    np.savetxt('force_result_q.txt', result_q)
-    np.savetxt('force_result_qd.txt', result_qd)
-    np.savetxt('force_result_qdd.txt', result_qdd)
+    np.savetxt('momentum_result_q.txt', result_q)
+    np.savetxt('momentum_result_qd.txt', result_qd)
+    np.savetxt('momentum_result_qdd.txt', result_qdd)
 
     with open('momentum_history.json', 'w') as file:
         json.dump(momentum_history, file)
@@ -456,7 +456,7 @@ def optimize_momentum(trajectory_data):
 start0 = np.array([0, 0, 0, 0, 0, 0])
 end0 = np.array([-pi/2, 0, 0, -0, -0, 0])    
 
-start1 = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
+start1 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end1 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 
 start2 = np.array([pi/2, -pi/2, pi/2, -pi/2, -pi/2, 0])
@@ -471,7 +471,7 @@ end4 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 
-trajectory_data = generate_traj_time(0.8, 201, start1, end1)
+trajectory_data = generate_traj_time(2, 201, start1, end1)
 
 hka_force_opt(20, 4, trajectory_data)
 """

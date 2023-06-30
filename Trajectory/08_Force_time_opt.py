@@ -171,10 +171,11 @@ def calculate_max_force(q_mat, qd_mat, contact_points_table, m_H, K, F_p):
             equi_contact_force[n, t] = vel_scalar[n, t] * sqrt(reduced_mass[n, t] * K)
             rf_p_storage[n, :, t] = result[3][:3]
 
-    #print(lin_vel)
+    #print(vel_scalar[4, :])
     max_contact_force = np.amax(equi_contact_force, axis=1)
+    print(max_contact_force)
     max_of_all = np.amax(max_contact_force)
-    index_max_of_all = np.argmax(max_of_all)
+    index_max_of_all = np.argmax(max_contact_force)
     delta_f = (max_of_all - F_p)**2
 
     return max_contact_force, max_of_all, delta_f, index_max_of_all
@@ -194,6 +195,7 @@ def hka_force_opt(N, Nbest, trajectory_data, start_joint_config, end_joint_confi
     :return result_qd: the optimized velocity trajectory
     :return result_qdd: the optimized acceleration trajectory
     """
+    post_mean_force = []
     start_time = ti.time() # timer that records algorithm runtime
     vel_max = np.zeros(6)
     a = np.zeros(6)
@@ -229,9 +231,9 @@ def hka_force_opt(N, Nbest, trajectory_data, start_joint_config, end_joint_confi
     qf = original_jointdata[5]
     flag = np.full(6, False)
         
-    K = 75 # Face is smashed against the robot, ouch!
-    F_p = 65 # Face is smashed against the robot, ouch!
-    m_H = 4.4 # Face is smashed against the robot, ouch!
+    K = 35000 # Face is smashed against the robot, ouch!
+    F_p = 210 # Face is smashed against the robot, ouch!
+    m_H = 40 # Face is smashed against the robot, ouch!
 
     for j in range(6): # reads necessary data from the original trajectory
         angle[j, :] = trajectory_data[j].q
@@ -248,14 +250,14 @@ def hka_force_opt(N, Nbest, trajectory_data, start_joint_config, end_joint_confi
     max_force_point = original_data[3]
 
     if original_force < F_p:
-        print(f'max force is {original_force} N, trajectory is safe, no optimization need!')
+        print(f'max force is {original_force} N at Point {max_force_point+1}, trajectory is safe, no optimization need!')
         return
     else:
-        print(f'max force is {original_force} N, optimization is needed')
+        print(f'max force is {original_force} N at Point {max_force_point+1}, optimization is needed')
     mu_t = (t_max - t_min) / 2 # initialize mean vector
     sig_t = (t_max - t_min) / 3 # initialize std.dev.vector
 
-    while iter <= 10:
+    while iter <= 100:
 
         lb = (t_min - mu_t) / sig_t
         ub = (t_max - mu_t) / sig_t
@@ -282,7 +284,8 @@ def hka_force_opt(N, Nbest, trajectory_data, start_joint_config, end_joint_confi
             max_contact_force = force_data[0]
             max_of_all = force_data[1]
             delta_f = force_data[2]
-            contact_force_list[i] = (max_of_all, i, delta_f)
+            index_max = force_data[3]
+            contact_force_list[i] = (max_of_all, i, delta_f, index_max)
             print(contact_force_list)
             print(f'finished computation of set no. {i+1}')
 
@@ -291,7 +294,7 @@ def hka_force_opt(N, Nbest, trajectory_data, start_joint_config, end_joint_confi
         num_array = sorted_force_list['Number'] # the corresponding indices
         t_rand_index = num_array[0 : Nbest] # the indices of the Nbest acceleration time vectors
         post_t_rand = [tf_rand[i] for i in t_rand_index]
-
+        post_mean_force.append(np.mean(sorted_force_list[0][0]))
         print(post_t_rand)
 
         mu_t_rand = np.mean(post_t_rand) # mean of Nbest candidates
@@ -316,7 +319,7 @@ def hka_force_opt(N, Nbest, trajectory_data, start_joint_config, end_joint_confi
             #    ax2.plot(time, qd_mat[i, 0, :])
             #    ax2.set_xlabel('Travel Time in s')
             #    ax2.set_ylabel('Joint velocity in rad/s')
-
+    post_mean_force = np.array(post_mean_force)
     force_opt = sorted_force_list[num_array[0]] 
     result_q = q_mat[num_array[0], :, :]
     result_qd = qd_mat[num_array[0], :, :]
@@ -324,61 +327,17 @@ def hka_force_opt(N, Nbest, trajectory_data, start_joint_config, end_joint_confi
     np.savetxt('force_result_q.txt', result_q)
     np.savetxt('force_result_qd.txt', result_qd)
     np.savetxt('force_result_qdd.txt', result_qdd)
+    np.savetxt('force_mean.txt', post_mean_force)
     print(f'Original max contact force: ')
     print(f'Optimized total energy consumption: {force_opt} J')
     print(f'Optimization runtime: {ti.time() - start_time} seconds')
     print(f'Optimized initial acceleration: {result_qdd[:, 0]}')
     return result_q, result_qd, result_qdd   
 
-def optimize_momentum(trajectory_data):
-
-    m_refl = np.zeros((7, 201))
-    lin_vel = np.zeros((7, 3, 201))
-    vel_scalar = np.zeros((7, 201))
-    rf_p_storage = np.zeros((7, 3, 201))
-    contact_points_table = get_contact_points()
-    original_jointdata =  get_original_jointdata(trajectory_data)
-    angle = original_jointdata[0]
-    velocity = original_jointdata[1]
-    accel = original_jointdata[2]
-    robot_mass = original_jointdata[3]
-    reduced_mass = np.zeros((7, 201))
-    equi_contact_force = np.zeros((7, 201))
-
-    K = 75 # Face is smashed against the robot, ouch!
-    F_p = 65 # Face is smashed against the robot, ouch!
-    m_H = 4.4 # Face is smashed against the robot, ouch!
-
-
-    for t in range(201):
-        #if t == 1:
-        #    print(q)
-        q = angle[:, t]
-        qd = velocity[:, t]
-
-        for i, point_list in enumerate(contact_points_table):
-            #print(f'r = {r}\n')
-            result = unit_vector(q, qd, point_list[0], point_list[1])
-            lin_vel[i, :, t] = result[2]
-            vel_scalar[i, t] = np.linalg.norm(lin_vel[i, :, t], 2)
-            m_refl[i, t] = result[1]
-            if m_refl[i, t] == 0:
-                reduced_mass[i, t] = 0
-            else:
-                reduced_mass[i, t] = 1 / (1 / m_refl[i, t] + 1 / m_H)
-            equi_contact_force[i, t] = vel_scalar[i, t] * sqrt(reduced_mass[i, t] * K)
-            rf_p_storage[i, :, t] = result[3][:3]
-
-    print(equi_contact_force)
-    print(m_refl)
-    print(np.amax(equi_contact_force, axis = 1))
-    print(np.amax(m_refl, axis = 1))
-    np.savetxt("equivalent_force.txt", equi_contact_force)
-
 start0 = np.array([0, 0, 0, 0, 0, 0])
 end0 = np.array([-pi/2, 0, 0, -0, -0, 0])    
 
-start1 = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
+start1 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end1 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 
 start2 = np.array([pi/2, -pi/2, pi/2, -pi/2, -pi/2, 0])
@@ -393,6 +352,6 @@ end4 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 
-trajectory_data = generate_traj_time(0.8, 201, start1, end1)
+trajectory_data = generate_traj_time(2, 201, start1, end1)
 
 hka_force_opt(10, 4, trajectory_data, start1, end1)
