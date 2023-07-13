@@ -3,7 +3,7 @@
 
 Use tolerance_band_diff() to generate tolerance band around the original angular trajectory and optimize energy consumption using heuristic Kalman and differential dynamic programming.
 Returns optimized trajectories and optimized energy consumption.
-Results are additionally saved to result_q.txt, result_qd.txt and result_qdd.txt in root directory.
+Results are additionally saved to band_q.txt (and _qd, _qdd etc.), band_discrete_q.txt (and _qd, _qdd etc.) in root directory.
 '''
 
 import numpy as np
@@ -34,10 +34,10 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
     :result_q, result_qd, result_qdd: optimized joint angle, velocity and acceleration, (sample_num+2) x 6 matrix
     :time_vec: time vector for creating graphs, 1 x (sample_num + 2) array, ranging from 0 sec to traj_steps sec
     """
-    flag = np.full(6, False)
-    mu_q = np.zeros(n)
-    sig_q = np.zeros(n)
-    mu_qd = np.zeros(n)
+    flag = np.full(6, False) # Flag that signals whether a joint is stationary, default is false
+    mu_q = np.zeros(n) # below are a bunch of initialisations for HKA
+    sig_q = np.zeros(n) # std. dev.
+    mu_qd = np.zeros(n) # mean
     sig_qd = np.zeros(n)
     mu_qdd = np.zeros(n)
     sig_qdd = np.zeros(n)
@@ -54,35 +54,34 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
     time = traj[6]
     q0 = np.zeros(6)
     qf = np.zeros(6)
-    width = 50 # number of increments between two control points for energy calculation. width = 50 delivers similar accuracy to numerical integration methods like Simpson
-    tolerance_band = np.zeros((2, 201, 6))
-    upper_bound = np.zeros(6)
-    lower_bound = np.zeros(6)
-    discrete_q = np.zeros((6, width))
-    discrete_qd = np.zeros((6, width))
-    discrete_qdd = np.zeros((6, width))
+    width = 50 # number of increments between two control points for energy calculation. width >= 20 delivers similar accuracy to numerical integration methods like Simpson, reduce width to save computing time
+    tolerance_band = np.zeros((2, 201, 6)) # initialisation of tolerance band
+    upper_bound = np.zeros(6) # upper bound of tolerance band
+    lower_bound = np.zeros(6) # lower bound
+    discrete_q = np.zeros((6, width)) # angle trajectory is saved here
+    discrete_qd = np.zeros((6, width)) # velocity trajectory is saved here
+    discrete_qdd = np.zeros((6, width)) # acceleration trajectory is saved here
     iter_total = 0
-    start_time = ti.time()
+    start_time = ti.time() # calculate computing time
 
     for i in range(6): # generate tolerance band for all joints
         angle = traj[i].q
         velocity = traj[i].qd
         q0[i] = angle[0]
         qf[i] = angle[-1]
-        if q0[i] == qf[i]:
-            flag[i] = True
-
+        if q0[i] == qf[i]: # if joint stationary
+            flag[i] = True # no tolerance band for stationary joints
         else:
-            upper = create_tolerance_bands(angle, velocity, time, 0.7, "upper") # see tolerance.py
-            lower = create_tolerance_bands(angle, velocity, time, 0.7, "lower")
+            upper = create_tolerance_bands(angle, velocity, time, 0.7, "upper") # generate upper bound, see tolerance.py
+            lower = create_tolerance_bands(angle, velocity, time, 0.7, "lower") # generate lower bound, see tolerance.py
             tolerance_band[0, :, i] = upper[1]
             tolerance_band[1, :, i] = lower[1]
 
-    t_accel = lower[2]
-    t_brake = lower[3]
+    t_accel = lower[2] # read acceleration time
+    t_brake = lower[3] # read brake time
     time_vec = np.round(np.array([0, t_accel/2, t_accel-0.01, t_accel+(t_brake-t_accel)/3, t_accel+2*(t_brake-t_accel)/3, t_brake+0.01, t_brake+t_accel/2]), 2) # manually define control points based on acceleration and brake time
-    ctr = 0
-    dt = traj[6][1] - traj[6][0]
+    ctr = 0 # iteration counter within DDP stage
+    dt = traj[6][1] - traj[6][0] # delta t for integration
     energy_og_total = 0 # accumulated energy consumption along unoptimized trajectory
     energy_total = 0 # accumulated energy consumption along optimized trajectory
 
@@ -95,10 +94,10 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
 
         energy_og = 0 # initialize pre-optimization energy consumption
         iter = 0 # initialize iteration counter  
-        t1 = time_vec[sn]
-        t2 = time_vec[sn+1]
+        t1 = time_vec[sn] # start point for interpolation
+        t2 = time_vec[sn+1] # end point for interpolation
         t_array = np.array([t1, t2]) # base x points for Bernstein polynomial interpolation
-        q_ref = np.zeros(6)
+        q_ref = np.zeros(6) # initialise original joint angle
         ref_index = np.where(np.round(traj[6], 2) == np.round(t2, 2)) # find control point in time array
 
         for ii in range(6): # fill out q_ref with the respective (original) joint angles
@@ -121,11 +120,11 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
 
         for i in range(n): # initialize mean, std.dev., and upper & lower bound for all joints
             mu_q[i] = traj[i].q[ref_index]
-            sig_q[i] = 2.1
+            sig_q[i] = 2.1 # empirically determined, the optimization results are in fact not significantly influenced by the initial std. dev.
             mu_qd[i] = traj[i].qd[ref_index]
-            sig_qd[i] = 5
+            sig_qd[i] = 5 # empirically determined
             mu_qdd[i] = traj[i].qdd[ref_index]
-            sig_qdd[i] = 2.6
+            sig_qdd[i] = 2.6 # empirically determined
             upper_bound[i] = tolerance_band[0, ref_index, i]
             lower_bound[i] = tolerance_band[1, ref_index, i]
             
@@ -135,23 +134,23 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
         print(f'Lower bound = {lower_bound}\nUpper bound = {upper_bound}\n')
 
         while iter <= 150: # begin kalman iteration
-            qdd_sample = np.zeros((N, 6, width))
+            qdd_sample = np.zeros((N, 6, width)) # store all randomly generated acceleration vectors
             qd_sample = np.zeros((N, 6, width))
             q_sample = np.zeros((N, 6, width))
-            t_eval = np.linspace(t1, t2, width)
+            t_eval = np.linspace(t1, t2, width) # time vector for energy evaluation
             energy_val_def = [('Energy','f8'), ('Number','i2')] # list that contains the energy consumption and the corresponding row index from assble_qdd
-            energy_val = np.zeros((N), dtype = energy_val_def)
+            energy_val = np.zeros((N), dtype = energy_val_def) # initialise energy list
 
             for joint_num in range(6): # generate random q, qd, qdd matrix for all joints
-                if flag[joint_num] == True:
-                    pass
+                if flag[joint_num] == True: # if stationary joint
+                    pass # skip
                 else:
-                    clip_left = lower_bound[joint_num] # considering the tolerance band for joint angle
-                    clip_right = upper_bound[joint_num] # considering the tolerance band for joint angle
-                    lb = (clip_left - mu_q[joint_num]) / sig_q[joint_num] # lower bound of the truncated gaussian distribution for angle
-                    ub = (clip_right - mu_q[joint_num]) / sig_q[joint_num] # upper bound of the truncated gaussian distribution for angle
-                    q_gauss = truncnorm(lb, ub, loc=mu_q[joint_num], scale=sig_q[joint_num]) # truncated gaussian distribution for angle
-                    asm_q[:, joint_num] = q_gauss.rvs(size=N) # angle distribution for all joints
+                    clip_left = lower_bound[joint_num] # truncated Gaussian based on tolerance band
+                    clip_right = upper_bound[joint_num] # truncated Gaussian based on tolerance band
+                    lb = (clip_left - mu_q[joint_num]) / sig_q[joint_num] # lower bound of the truncated Gaussian
+                    ub = (clip_right - mu_q[joint_num]) / sig_q[joint_num] # upper bound of the truncated Gaussian
+                    q_gauss = truncnorm(lb, ub, loc=mu_q[joint_num], scale=sig_q[joint_num]) # truncated Gaussian distribution for joint angle
+                    asm_q[:, joint_num] = q_gauss.rvs(size=N) # truncated Gaussian distribution for joint angle
                     left_d = 0.8 * traj[joint_num].qd[ref_index] # empirically define the boundaries for joint velocity
                     right_d = 1.2 * traj[joint_num].qd[ref_index] # empirically define the boundaries for joint velocity
 
@@ -162,16 +161,16 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
                         clip_left_d = right_d
                         clip_right_d = left_d
 
-                    lb_d = (clip_left_d - mu_qd[joint_num]) / sig_qd[joint_num] 
-                    ub_d = (clip_right_d - mu_qd[joint_num]) / sig_qd[joint_num] 
-                    qd_gauss = truncnorm(lb_d, ub_d, loc=mu_qd[joint_num], scale=sig_qd[joint_num])
-                    asm_qd[:, joint_num] = qd_gauss.rvs(size=N) 
+                    lb_d = (clip_left_d - mu_qd[joint_num]) / sig_qd[joint_num] # lower bound of the truncated Gaussian for joint velocity
+                    ub_d = (clip_right_d - mu_qd[joint_num]) / sig_qd[joint_num] # upper bound of the truncated Gaussian for joint velocity
+                    qd_gauss = truncnorm(lb_d, ub_d, loc=mu_qd[joint_num], scale=sig_qd[joint_num]) # truncated Gaussian distribution for joint velocity
+                    asm_qd[:, joint_num] = qd_gauss.rvs(size=N) # truncated Gaussian distribution for joint velocity
 
                     if sn < 2: # acceleration phase
                         left_dd = 0.5 * traj[joint_num].qdd[ref_index] # acceleration cannot be lower than half of its original value
                         right_dd = np.inf # maximal acceleration not limited
-                        if traj[joint_num].qdd[ref_index] == 0: # if joint is stationary 
-                            asm_qdd[:, joint_num] = np.random.normal(mu_qdd[joint_num], sig_qdd[joint_num], size=N)
+                        if traj[joint_num].qdd[ref_index] == 0: # if acceleration is 0
+                            asm_qdd[:, joint_num] = np.random.normal(mu_qdd[joint_num], sig_qdd[joint_num], size=N) # use standard Gaussian instead
                         elif left_dd < 0: # if acceleration is negative, upper and lower bound need to be swapped
                             clip_left_dd = -np.inf
                             clip_right_dd = left_dd    
@@ -179,22 +178,23 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
                             clip_left_dd = left_dd
                             clip_right_dd = right_dd
 
-                        lb_dd = (clip_left_dd - mu_qdd[joint_num]) / sig_qdd[joint_num] # lower bound of the truncated gaussian distribution for acceleration
-                        ub_dd = (clip_right_dd - mu_qdd[joint_num]) / sig_qdd[joint_num] # upper bound of the truncated gaussian distribution for acceleration
-                        qdd_gauss = truncnorm(lb_dd, ub_dd, loc=mu_qdd[joint_num], scale=sig_qdd[joint_num])
-                        asm_qdd[:, joint_num] = qdd_gauss.rvs(size=N)
+                        lb_dd = (clip_left_dd - mu_qdd[joint_num]) / sig_qdd[joint_num] # lower bound of the truncated Gaussian for acceleration
+                        ub_dd = (clip_right_dd - mu_qdd[joint_num]) / sig_qdd[joint_num] # upper bound of the truncated Gaussian for acceleration
+                        qdd_gauss = truncnorm(lb_dd, ub_dd, loc=mu_qdd[joint_num], scale=sig_qdd[joint_num]) # truncated Gaussian for joint acceleration
+                        asm_qdd[:, joint_num] = qdd_gauss.rvs(size=N) # truncated Gaussian for joint acceleration
+
                     else:
-                        asm_qdd[:, joint_num] = np.random.normal(mu_qdd[joint_num], sig_qdd[joint_num], size=N)
+                        asm_qdd[:, joint_num] = np.random.normal(mu_qdd[joint_num], sig_qdd[joint_num], size=N) # standard Gaussian in other stages with corresponding mean and std.dev. obtained by HKA
             
-            for i in range(N):
-                energy_total_intv = 0
-                power_val = []
-                for joint_num in range(6):
-                    if flag[joint_num] == True:
-                        q_sample[i, joint_num, :] = q0[joint_num]
-                        qd_sample[i, joint_num, :] = 0
-                        qdd_sample[i, joint_num, :] = 0
-                    else:
+            for i in range(N): # iterate through all N generated samples
+                energy_total_intv = 0 # initialise total energy
+                power_val = [] # initialise list to store robotpower curve
+                for joint_num in range(6): 
+                    if flag[joint_num] == True: # if joint stationary
+                        q_sample[i, joint_num, :] = q0[joint_num] # the joint should remain stationary
+                        qd_sample[i, joint_num, :] = 0 # the joint should remain stationary
+                        qdd_sample[i, joint_num, :] = 0 # the joint should remain stationary
+                    else: # joint is moving
                         y1 = np.array([result_q[sn, joint_num], result_qd[sn, joint_num], result_qdd[sn, joint_num]]) # the angle, velocity and acceleration of previous point
                         y2 = np.array([asm_q[i, joint_num], asm_qd[i, joint_num], asm_qdd[i, joint_num]]) # angle, velocity, acceleration of current point
                         yi = np.vstack((y1, y2)) # vertical stack for BPoly operation
@@ -204,28 +204,28 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
                         qdd_sample[i, joint_num, :] = q_bpoly.derivative(2)(t_eval) # acceleration trajectory
 
                 q_torque_calc = np.transpose(q_sample[i, :, :]) # transpose for torque calculation
-                qd_torque_calc = np.transpose(qd_sample[i, :, :])
-                qdd_torque_calc = np.transpose(qdd_sample[i, :, :])
+                qd_torque_calc = np.transpose(qd_sample[i, :, :]) # same as above
+                qdd_torque_calc = np.transpose(qdd_sample[i, :, :]) # same as above
 
-                for k in range(width):
+                for k in range(width): # calculate mechanical power in each time step of the stage
                     torq_vec = cal_tau(q_torque_calc[k, :], qd_torque_calc[k, :], qdd_torque_calc[k, :]) # calculate torque
                     velocity_vec = qd_torque_calc[k, :] # read velocity
                     power_val.append(abs(np.linalg.norm(np.multiply(torq_vec, velocity_vec), 1))) # element-wise multiplication, then take 1-Norm to get robot power output
 
                 energy_total_intv = simpson(power_val, t_eval) # integrate power over time to get energy using Simpson method
-                energy_val[i] = (energy_total_intv, i)       
+                energy_val[i] = (energy_total_intv, i) # energy consumption associated with the i-th generated q_sample    
 
             sorted_energy_val = np.sort(energy_val, order='Energy') # sort energy consumption from lowest to highest
-            post_q = np.zeros((Nbest, 6))
-            post_qd = np.zeros((Nbest, 6))
-            post_qdd = np.zeros((Nbest, 6))
-            num_array = sorted_energy_val['Number']
+            post_q = np.zeros((Nbest, 6)) # initialise matrix for N best samples that yield the least energy consumption
+            post_qd = np.zeros((Nbest, 6)) # same as above
+            post_qdd = np.zeros((Nbest, 6)) # same as above
+            num_array = sorted_energy_val['Number'] # the indices of the samples that yield the least energy consumption
 
             for i in range(Nbest): # Consider the Nbest candidates
                 num = num_array[i] # returns the index for num-th best candidate
                 post_q[i, :] = asm_q[num, :] # place the num th row of the assembled q-matrix onto the i-th row of the post_q matrix
-                post_qd[i, :] = asm_qd[num, :]
-                post_qdd[i, :] = asm_qdd[num, :]
+                post_qd[i, :] = asm_qd[num, :] # same as above
+                post_qdd[i, :] = asm_qdd[num, :] # same as above
 
             # measurement step, compute mean and variance for q, qd and qdd
             mu_q_meas = np.mean(post_q, 0)
@@ -248,10 +248,10 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
 
             if all(i < 1e-4 for i in var_qdd_post) == True: # convergence criterion
                 print(f'exited loop at iter = {iter}')
-                break
+                break # if converge, end HKA
 
-            iter = iter + 1      
-        iter_total = iter_total + iter
+            iter = iter + 1 # HKA counter      
+        iter_total = iter_total + iter # total iteration counter
         
         result_q[sn+1, :] = asm_q[num_array[0], :] # the result calculated by HKA is written to the result matrix
         result_qd[sn+1, :] = asm_qd[num_array[0], :] # the result calculated by HKA is written to the result matrix
@@ -266,7 +266,7 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
             discrete_qd = np.hstack((discrete_qd, qd_sample[num_array[0]]))
             discrete_qdd = np.hstack((discrete_qdd, qdd_sample[num_array[0]]))
 
-        energy_total = energy_total + energy_val[num_array[0]]['Energy']
+        energy_total = energy_total + energy_val[num_array[0]]['Energy'] # total energy (sum of energy consumption of each stage)
         print(f'post acceleration matrix post_qdd = \n{post_qdd}\nwith a variance of {var_qdd_post}\nmean = {mu_qdd_meas}\n\n')
         t_trace.append(t_eval) # store time array for plotting, this is different from the original trajectory time array because new time arrays are generated for each spline interpolation
         print(f'Energy consumption converges at {asm_qdd[num_array[0], :]} 1/s^2\n\nJoint config: {asm_q[num_array[0], :]} total energy consumption: {energy_val[num_array[0]]} J\n')
@@ -302,7 +302,7 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
             qd_last[joint_num, :] = q_bpoly.derivative()(t_eval) # velocity trajectory
             qdd_last[joint_num, :] = q_bpoly.derivative(2)(t_eval) # acceleration trajectory      
 
-    discrete_q = np.hstack((discrete_q, q_last)) # now we complete the entire optimized trajectory
+    discrete_q = np.hstack((discrete_q, q_last)) # now we complete the entire optimized trajectory by stacking the optimized trajectory with the interpolated last section of the trajectory
     discrete_qd = np.hstack((discrete_qd, qd_last))
     discrete_qdd = np.hstack((discrete_qdd, qdd_last))
 
@@ -342,18 +342,17 @@ def tolerance_band_diff(N, Nbest, n, sample_num, traj):
     energy_og_total = energy_og_total + energy_og_last # the total energy consumption over the entire original trajectory
 
     print(f'Optimization ended.\nOriginal energy consumption of the given trajectory is: {energy_og_total} J.\nTotal energy consumption of the optimizied trajectory is: {energy_total} J.\n')
-    np.savetxt("result_q.txt", result_q)
-    np.savetxt("result_qd.txt", result_qd)
-    np.savetxt("result_qdd.txt", result_qdd)
-    np.savetxt("time_vec.txt", time_vec)
-    np.savetxt("t_trace.txt", t_trace)
-    np.savetxt("discrete_q.txt", discrete_q)
-    np.savetxt("discrete_qd.txt", discrete_qd)
-    np.savetxt("discrete_qdd.txt", discrete_qdd)
+    np.savetxt("band_q.txt", result_q)
+    np.savetxt("band_qd.txt", result_qd)
+    np.savetxt("band_qdd.txt", result_qdd)
+    np.savetxt("band_time_vec.txt", time_vec)
+    np.savetxt("band_t_trace.txt", t_trace)
+    np.savetxt("band_discrete_q.txt", discrete_q)
+    np.savetxt("band_discrete_qd.txt", discrete_qd)
+    np.savetxt("band_discrete_qdd.txt", discrete_qdd)
     end_time = ti.time()
     print(end_time - start_time)
     print(iter_total)
-
 
     return result_q, result_qd, result_qdd, time_vec, traj, discrete_q, discrete_qd, discrete_qdd, t_trace
 

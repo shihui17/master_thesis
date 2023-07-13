@@ -41,9 +41,9 @@ def hka_profile_opt(N, Nbest, traj, start_joint_config, end_joint_config):
     velocity = np.zeros((6, step))
     accel = np.zeros((6, step))
     t0 = 0 # start
-    tf = time[-1] # finish
-    t_min = 0.8*tf
-    t_max = 1.2*tf
+    tf = time[-1] # finish (length of trajectory time)
+    t_min = 0.8*tf # manually defined search domain for optimal trajectory time
+    t_max = 1.1*tf # manually defined search domain for optimal trajectory time
     mu_t = np.zeros(6) # mean vector for Kalman
     sig_t =  np.zeros(6) # covariance vector for Kalman
     tf_rand = np.zeros(N) # the matrix to store all N randomly generated acceleration time vectors for all 6 joints, hence the size 6 x N
@@ -54,8 +54,7 @@ def hka_profile_opt(N, Nbest, traj, start_joint_config, end_joint_config):
     qdd_mat = np.zeros((N, 6, step)) # randomly generated acceleration trajectory
     iter = 0 # iteration counter
     post_t_rand = np.zeros((6, Nbest)) # matrix to store the Nbest acceleration time vectors that yield the best energy efficiency
-    tf_r = np.zeros(6)
-    flag = np.full(6, False)
+    flag = np.full(6, False) # flag that signals whether the joint is stationary, default is false
 
     for j in range(6): # reads necessary data from the original trajectory
         angle[j, :] = traj[j].q
@@ -64,7 +63,7 @@ def hka_profile_opt(N, Nbest, traj, start_joint_config, end_joint_config):
         q0[j] = angle[j, 0]
         qf[j] = angle[j, -1]
 
-        if q0[j] == qf[j]: # if the joint does not move originally, then prevent the optimizer from moving it during optimization
+        if q0[j] == qf[j]: # check if joint is stationary
             flag[j] = True
     
     mu_t = tf
@@ -81,20 +80,20 @@ def hka_profile_opt(N, Nbest, traj, start_joint_config, end_joint_config):
         lb = (t_min - mu_t) / sig_t
         ub = (t_max - mu_t) / sig_t
         trunc_gen_t = truncnorm(lb, ub, loc=mu_t, scale=sig_t) 
-        tf_rand = trunc_gen_t.rvs(size=N) # truncated gaussian distribution of size N is stored here
+        tf_rand = trunc_gen_t.rvs(size=N) # generate random trajectory time of size N
   
         energy_list_def = [('Energy','f8'), ('Number','i2')] # define a tuple that contains the energy consumption and the corresponding row index
         energy_list = np.zeros((N), dtype = energy_list_def) # initialize tuple
 
-        for i in range(N): # iterate through trajectory set
-            tg = generate_traj_time(tf_rand[i], step, start_joint_config, end_joint_config)
+        for i in range(N): # iterate through all N generated trajetory time
+            tg = generate_traj_time(tf_rand[i], step, start_joint_config, end_joint_config) # generate trajectory with randomly generated trajectory time
             for j in range(6):
-                if flag[j] == False:
-                    q_mat[i, j, :] = tg[j].q
+                if flag[j] == False: # if joint is not stationary
+                    q_mat[i, j, :] = tg[j].q # accept new trajectory data
                     qd_mat[i, j, :] = tg[j].qd
                     qdd_mat[i, j, :] = tg[j].qdd
-                else:
-                    q_mat[i, j, :] = angle[j, :]
+                else: # if stationary
+                    q_mat[i, j, :] = angle[j, :] # read original trajectory data
                     qd_mat[i, j, :] = velocity[j, :]
                     qdd_mat[i, j, :] = accel[j, :]
 
@@ -125,9 +124,9 @@ def hka_profile_opt(N, Nbest, traj, start_joint_config, end_joint_config):
         sig_t = new_mu_sig_t[1] # new std.dev.
         print(f'the diagonal of the covariance matrix:\n{var_t_rand}')
 
-        if var_t_rand < 1e-4: # convergence criterion
+        if var_t_rand < 1e-6: # convergence criterion
             print(f'exited HKA at iter = {iter}')
-            break
+            break # if converge, end HKA
         
         print(f'End of iteration {iter}, begin iteration {iter+1}\n')
         iter = iter + 1
@@ -149,8 +148,8 @@ def hka_profile_opt(N, Nbest, traj, start_joint_config, end_joint_config):
     print(f'Optimization runtime: {ti.time() - start_time} seconds')
     return result_q, result_qd, result_qdd, optimized_time
 
-start = np.array([-1.570796327,	-1.570796327,	1.570796327,	-1.570796327,	-1.570796327,	0])
-end = np.array([1.215785543,	-1.319583654,	0.625792825,	-2.292949242,	-1.57085216,	-0.000166897])
+start = np.array([-1.570796327,	-1.570796327,	1.570796327,	-1.570796327,	-1.570796327,	0]) # this is the Task 6 tested in master's thesis
+end = np.array([1.215785543,	-1.319583654,	0.625792825,	-2.292949242,	-1.57085216,	-0.000166897]) # this is the Task 6 tested in master's thesis
 
 start1 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end1 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
@@ -169,34 +168,30 @@ end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 #end = np.array([-pi, -pi/2, pi/2, -pi/2, -pi/2, 0])
 traj = generate_traj_time(2, 201, start, end)
 tg = hka_profile_opt(30, 4, traj, start, end)
-
 optimized_time = tg[3]
 np.savetxt("optimized_time_vec.txt", optimized_time)
 #print(optimized_time)
-
-
-decision = 1
-if decision == 1:
-    joint_data = traj
-    for j in range(6):
-        result_q = np.loadtxt('trajtime_result_q.txt')
-        result_qd = np.loadtxt('trajtime_result_qd.txt')
-        result_qdd = np.loadtxt('trajtime_result_qdd.txt')
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-        ax1.plot(optimized_time, result_q[j, :], label=f'optimized traj for joint {j+1}', color='green')
-        ax1.plot(joint_data[6], joint_data[j].q, label=f'orignal traj for joint {j+1}', color='red')
-        ax1.set_xlabel('Travel time in s')
-        ax1.set_ylabel('Joint angle in rad')
-        ax1.legend()
-        ax2.plot(optimized_time, result_qd[j, :], label=f'optimized traj for joint {j+1}', color='g')
-        ax2.plot(joint_data[6], joint_data[j].qd, label=f'orignal traj for joint {j+1}', color='r')
-        ax2.set_xlabel('Travel time in s')
-        ax2.set_ylabel('Joint velocity in rad/s')
-        ax3.plot(optimized_time, result_qdd[j, :], label=f'optimized traj for joint {j+1}', color='g')
-        ax3.plot(joint_data[6], joint_data[j].qdd, label=f'orignal traj for joint {j+1}', color='r')
-        ax3.set_xlabel('Travel time in s')
-        ax3.set_ylabel('Joint acceleration in rad/s^2')
-        fig.suptitle(f"Trajectory for Joint {j+1}", fontsize=16)
-        
-        #fig.savefig(f'C:\Codes\master_thesis\Trajectory\Figures\Profile_optimization/prof_opt_joint{j+1}.png')
-        plt.show()
+"""
+for j in range(6):
+    result_q = np.loadtxt('trajtime_result_q.txt')
+    result_qd = np.loadtxt('trajtime_result_qd.txt')
+    result_qdd = np.loadtxt('trajtime_result_qdd.txt')
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    ax1.plot(optimized_time, result_q[j, :], label=f'optimized traj for joint {j+1}', color='green')
+    ax1.plot(joint_data[6], joint_data[j].q, label=f'orignal traj for joint {j+1}', color='red')
+    ax1.set_xlabel('Travel time in s')
+    ax1.set_ylabel('Joint angle in rad')
+    ax1.legend()
+    ax2.plot(optimized_time, result_qd[j, :], label=f'optimized traj for joint {j+1}', color='g')
+    ax2.plot(joint_data[6], joint_data[j].qd, label=f'orignal traj for joint {j+1}', color='r')
+    ax2.set_xlabel('Travel time in s')
+    ax2.set_ylabel('Joint velocity in rad/s')
+    ax3.plot(optimized_time, result_qdd[j, :], label=f'optimized traj for joint {j+1}', color='g')
+    ax3.plot(joint_data[6], joint_data[j].qdd, label=f'orignal traj for joint {j+1}', color='r')
+    ax3.set_xlabel('Travel time in s')
+    ax3.set_ylabel('Joint acceleration in rad/s^2')
+    fig.suptitle(f"Trajectory for Joint {j+1}", fontsize=16)
+    
+    #fig.savefig(f'C:\Codes\master_thesis\Trajectory\Figures\Profile_optimization/prof_opt_joint{j+1}.png')
+    plt.show()
+"""

@@ -48,3 +48,10 @@ ValueError: Output size (6, 1) is not compatible with broadcast dimensions of in
 2023-06-28 16:12:10,450 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 59.86585786115273, best pos: [ 2.19121216 48.66883115         nan -2.75183691 -1.65518112 -8.94255863]
 2023-06-28 16:12:26,235 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.5, 'c2': 0.3, 'w': 0.9}
 2023-06-28 16:12:29,512 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 55.54221871708594, best pos: [56.1978643  46.40100772         nan -0.22305548 -6.02647924 -3.02108289]
+2023-07-13 14:35:42,621 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.5, 'c2': 0.3, 'w': 0.9}
+2023-07-13 14:35:45,625 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 57.27475343349377, best pos: [ 97.01367033   4.37212801          nan -11.64424428 -24.01796284
+ -52.30093587]
+2023-07-13 14:35:58,304 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.5, 'c2': 0.3, 'w': 0.9}
+2023-07-13 14:36:01,339 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 20.757022887884034, best pos: [45.06936659 69.30908186         nan -0.25258132 -0.27857936 -3.01858889]
+2023-07-13 14:36:11,782 - pyswarms.single.global_best - INFO - Optimize for 100 iters with {'c1': 0.5, 'c2': 0.3, 'w': 0.9}
+2023-07-13 14:36:14,800 - pyswarms.single.global_best - INFO - Optimization finished | best cost: 57.022459845654105, best pos: [ 8.29825139 27.41482948         nan -1.0727814  -2.09060585 -2.75917869]

@@ -1,3 +1,9 @@
+'''
+@author: Shihui Liu
+
+Embedding inverse dynamics (.c file) into python script using ctypes
+'''
+
 import ctypes
 import numpy as np
 

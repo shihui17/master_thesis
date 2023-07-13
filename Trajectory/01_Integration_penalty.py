@@ -194,7 +194,6 @@ def heuristic_kalman(N, Nbest, n, sample_num, joint):
                     assble_qdd[:, i] = np.transpose(s_qdd)
 
             # Linear interpolation between the previous and the current acceleration
-            width = 10
             qdd_sample = np.zeros((N, 6, width)) # sample acceleration points between previous and current sample point
             qd_sample = np.zeros((N, 6, width)) # sample velocity points
             q_sample = np.zeros((N, 6, width)) # sample angle points
@@ -238,34 +237,34 @@ def heuristic_kalman(N, Nbest, n, sample_num, joint):
                 for z in range(6):
                     if z == 1:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = 0 if sign_array[z] > 0 else 0
+                            coeff[z] = -700 if sign_array[z] > 0 else 700
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 0 if sign_array[z] < 0 else -0
+                            coeff[z] = 700 if sign_array[z] < 0 else -700
                     elif z == 0:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = 0 if sign_array[z] > 0 else 0
+                            coeff[z] = -120 if sign_array[z] > 0 else 120
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 0 if sign_array[z] < 0 else 0
+                            coeff[z] = 120 if sign_array[z] < 0 else -120
                     elif z == 2:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = 00 if sign_array[z] > 0 else 00
+                            coeff[z] = -100 if sign_array[z] > 0 else 100
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 00 if sign_array[z] < 0 else -00       
+                            coeff[z] = 100 if sign_array[z] < 0 else -100       
                     elif z == 4:                
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -0 if sign_array[z] > 0 else 0
+                            coeff[z] = -180 if sign_array[z] > 0 else 180
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 0 if sign_array[z] < 0 else -0                         
+                            coeff[z] = 180 if sign_array[z] < 0 else -180                         
                     elif z == 5:
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -0 if sign_array[z] > 0 else 0
+                            coeff[z] = -580 if sign_array[z] > 0 else 580
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 0 if sign_array[z] < 0 else -0
+                            coeff[z] = 580 if sign_array[z] < 0 else -580
                     else: 
                         if u[z] == 1: # positive trapeze, q_opt > q_ref to be encouraged, coeff needs to be <0 to reduce cost function value
-                            coeff[z] = -0 if sign_array[z] > 0 else 0
+                            coeff[z] = -20 if sign_array[z] > 0 else 20
                         else: # negative trapeze, q_opt < q_ref to be encouraged
-                            coeff[z] = 0 if sign_array[z] < 0 else -0
+                            coeff[z] = 20 if sign_array[z] < 0 else -20
                 cost_total_intv[i] = (energy_total_intv + (np.linalg.norm(coeff * (sign_array * delta_q**2), 1))**2, i) # compute total cost = energy + penalty
 
             sorted_cost_total = np.sort(cost_total_intv, order = 'Regulated Energy')
@@ -286,15 +285,15 @@ def heuristic_kalman(N, Nbest, n, sample_num, joint):
             mu_qdd = new_mu_sig_qdd[0] # new mean acceleration vector
             sig_qdd = new_mu_sig_qdd[1] # new standard deviation of acceleration vectors
 
-            id = True
+            id = True # identifier for convergence
             for var in var_qdd_post:
-                if var == 0:
-                    continue
-                if var > 1e-4:
-                    id = False
-            if id == True:
+                if var == 0: # if joint stationary
+                    continue # ignore the joint
+                if var > 1e-4: # if any of the element in covariance diagonal is greater than 1e-4
+                    id = False # no converge
+            if id == True: # if all elements less than 1e-4
                 print(f'exited loop at iter = {iter}')
-                break
+                break # converge
             iter = iter + 1
     
         iter_total = iter_total + iter
@@ -320,14 +319,14 @@ def heuristic_kalman(N, Nbest, n, sample_num, joint):
         result_qd[-1, joint_num] = joint[joint_num].qd[-1]
         result_qdd[-1, joint_num] = joint[joint_num].qdd[-1]
 
-    time_vec[-1] = 3
+    time_vec[-1] = time[-1]
 
     # In the following, the trajectory and energy consumption between the last two control points (from last sample point to the end of trajectory) are calculated and saved for plotting
     t_array = time_vec[-2:] # last two control points
     t_eval = np.linspace(t_array[0], t_array[1], width) # time array for evaluation, width = 10
     t_ref.append(t_eval) # store time array for plotting, this is different from the original trajectory time array because new time arrays are generated for each spline interpolation
     t_ref = np.concatenate(t_ref) # convert list to array for plotting
-    print(t_trace)
+    #print(t_trace)
     q_last = np.zeros((6, width)) # q-array between last two control points
     qd_last = np.zeros((6, width))
     qdd_last = np.zeros((6, width))
@@ -391,10 +390,11 @@ def heuristic_kalman(N, Nbest, n, sample_num, joint):
     np.savetxt("result_qdd.txt", result_qdd)
     np.savetxt("time_vec.txt", time_vec)
     np.savetxt("t_int_trace.txt", t_ref)
-    np.savetxt("nopenalty_q.txt", discrete_q)
-    np.savetxt("nopenalty_qd.txt", discrete_qd)
-    np.savetxt("nopenalty_qdd.txt", discrete_qdd)
+    np.savetxt("C:\Codes\master_thesis\Trajectory\matlab_plot\integration\discrete_int_q2.txt", discrete_q)
+    np.savetxt("C:\Codes\master_thesis\Trajectory\matlab_plot\integration\discrete_int_qd2.txt", discrete_qd)
+    np.savetxt("C:\Codes\master_thesis\Trajectory\matlab_plot\integration\discrete_int_qdd2.txt", discrete_qdd)
     np.savetxt("discrete_time_vec.txt", time_vec)
+
     end_time = ti.time()
     print(end_time - start_time)
     print(iter_total)
@@ -426,36 +426,5 @@ end4 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 
-#start = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
-#end = np.array([0, -0.749*pi, 0.69*pi, 0.444*pi, -0.8*pi, -pi])
 joint = generate_traj_time(2, 201, start1, end1)
-results = heuristic_kalman(40, 4, 6, 6, joint)
-"""
-joint = results[4]
-time = results[3][0:7]
-q = results[0]
-qd = results[1]
-qdd = results[2]
-width = 10
-qdd_graph = np.zeros((6, width))
-qd_graph = np.zeros((6, width))
-q_graph = np.zeros((6, width))
-#print(time)
-
-
-
-
-
-for j_num in range(6):
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
-    ax1.plot(joint[6], joint[j_num].q, color='blue')
-    ax1.plot(time, q[:, j_num], 'r+')
-    ax2.plot(joint[6], joint[j_num].qd, color='blue')
-    ax2.plot(time, qd[:, j_num], 'r+')
-    ax3.plot(joint[6], joint[j_num].qdd, color='blue')
-    ax3.plot(time, qdd[:, j_num], 'r+')
-    for a, b in zip(time, np.round(qdd[:, j_num], 3)):
-        plt.text(a, b, str(b))
-
-plt.show()
-"""
+results = heuristic_kalman(30, 4, 6, 6, joint)
