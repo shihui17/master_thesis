@@ -2,7 +2,8 @@
 @author: Shihui Liu
 
 A momentum-limited trajectory planning method using HKA and velocity profile optimization. Seven contact points are considered. For each contact point, the linear momentum over the entire trajectory
-is calculated. The maximum linear momentum is determined. At last, the maximum linear momentum among all contact points is determined and optimized. 
+is calculated. The maximum linear momentum is determined. At last, the maximum linear momentum among all contact points is determined and optimized with the velocity profile optimization method used 
+in 03_Profile_Optimization.py.
 '''
 
 from math import pi

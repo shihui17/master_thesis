@@ -1,11 +1,9 @@
 '''
 @author: Shihui Liu
 
-gen_traj() generates trapezoidal trajectories based on parameters calculated by HKA
-hka_momentum_opt() optimizes linear momentum of contact point using HKA, based on a set of randomly generated trapezoidal trajectories 
-get_contact_points() reads the seven predefined contact points in their corresponding local RF into a tuple
-calculate_momentum() calculates the linear velocity, direction of the velocity, reflected mass of a given contact point
-get_original_trajectory_data() returns the original trajectory data of all joints as numpy arrays
+A force-limited trajectory planning method using HKA and velocity profile optimization. Seven contact points are considered. Similar to momentum-limited trajectory planning, the contact force is
+considered instead of linear momentum. The contact force is calculated in calculate_max_force() (see utility.py), the procedures are based on ISO/TS 15066. The optimization is based on the velocity profile optimization
+method.
 '''
 
 from math import pi, sqrt
@@ -184,7 +182,7 @@ def hka_force_opt(N, Nbest, trajectory_data, start_joint_config, end_joint_confi
         sig_t = new_mu_sig_t[1] # new std.dev.
         print(f'the diagonal of the covariance matrix:\n{var_t_rand}')
 
-        if var_t_rand < 1e-6: # convergence criterion
+        if var_t_rand < 1e-4: # convergence criterion
             print(f'exited HKA at iter = {iter}')
             break
         

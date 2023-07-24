@@ -2,8 +2,8 @@
 @author: Shihui Liu
 
 A force-limited trajectory planning method using HKA and velocity profile optimization. Seven contact points are considered. Similar to momentum-limited trajectory planning, the contact force is
-considered instead of linear momentum. The contact force is calculated in calculate_max_force(), the procedures are based on ISO/TS 15066. The optimization is based on the velocity profile optimization
-method.
+considered instead of linear momentum. The contact force is calculated in calculate_max_force() (see utility.py), the procedures are based on ISO/TS 15066. This python script attempts to lower 
+the maximum contact force to the upper limit by changing the velocity profile like in 03_Profile_Optimization.py, which sadly did not work. Details see master's thesis.
 '''
 
 from math import pi, sqrt

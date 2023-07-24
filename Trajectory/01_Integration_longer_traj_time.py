@@ -1,3 +1,11 @@
+'''
+@author: Shihui Liu
+
+This script performs the DDP-HKA method introduced in the master's thesis without predefined penalty functions. The trajectory time of last stage is extended so that the robot can reach
+the target joint configuration.
+
+'''
+
 import roboticstoolbox as rtb
 import numpy as np
 import math
@@ -426,36 +434,5 @@ end4 = np.array([pi, -pi/3, pi/2, -5*pi/6, -0.58*pi, -0.082*pi])
 start5 = np.array([0, -pi/2, pi/2, -pi/2, -pi/2, 0])
 end5 = np.array([2*pi/3, -pi/8, pi, -pi/2, 0, -pi/3])
 
-#start = np.array([-pi, -pi, pi/2, -pi/2, -pi/2, 0])
-#end = np.array([0, -0.749*pi, 0.69*pi, 0.444*pi, -0.8*pi, -pi])
 joint = generate_traj_time(2, 201, start1, end1)
 results = heuristic_kalman(40, 4, 6, 6, joint)
-"""
-joint = results[4]
-time = results[3][0:7]
-q = results[0]
-qd = results[1]
-qdd = results[2]
-width = 10
-qdd_graph = np.zeros((6, width))
-qd_graph = np.zeros((6, width))
-q_graph = np.zeros((6, width))
-#print(time)
-
-
-
-
-
-for j_num in range(6):
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, layout='constrained')
-    ax1.plot(joint[6], joint[j_num].q, color='blue')
-    ax1.plot(time, q[:, j_num], 'r+')
-    ax2.plot(joint[6], joint[j_num].qd, color='blue')
-    ax2.plot(time, qd[:, j_num], 'r+')
-    ax3.plot(joint[6], joint[j_num].qdd, color='blue')
-    ax3.plot(time, qdd[:, j_num], 'r+')
-    for a, b in zip(time, np.round(qdd[:, j_num], 3)):
-        plt.text(a, b, str(b))
-
-plt.show()
-"""

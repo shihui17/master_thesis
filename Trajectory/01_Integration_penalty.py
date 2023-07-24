@@ -1,3 +1,11 @@
+'''
+@author: Shihui Liu
+
+This script performs the DDP-HKA method introduced in the master's thesis with predefined penalty functions. Find in the root directory the optimization results as .txt files after running
+the script. Additional plots can be found in /Trajectory/Figures.
+
+'''
+
 import roboticstoolbox as rtb
 import numpy as np
 import math

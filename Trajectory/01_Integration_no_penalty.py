@@ -1,3 +1,11 @@
+'''
+@author: Shihui Liu
+
+This script performs the DDP-HKA method introduced in the master's thesis without predefined penalty functions, which more often than not produces trajectories that are not feasible.
+Serves only as reference and comparison.
+
+'''
+
 import roboticstoolbox as rtb
 import numpy as np
 import math
