@@ -14,7 +14,9 @@ Robotics Toolbox (RTB) for Python needs to be installed to run the codes with (P
 pip3 install roboticstoolbox-python
 ```
 
-Some changes were made in the trajectory.py file of RTB for better generation of trapezoidal velocity profiles. Therefore, copy `trajectory.py` from the root directory of this repo to `~\AppData\Local\Programs\Python\Python311\Lib\site-packages\roboticstoolbox\tools`, replace the `trajectory.py` there.
+Some changes were made in the trajectory.py file of RTB for better generation of trapezoidal velocity profiles. Therefore, copy `trajectory.py` from the root directory of this repo to `~\AppData\Local\Programs\Python\Python311\Lib\site-packages\roboticstoolbox\tools`,
+
+and replace the `trajectory.py` there.
 
 The DH Parameters of Yu+ needs to be included in RTB. To do so, follow the instructions below:
 
