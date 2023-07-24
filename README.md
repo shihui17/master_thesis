@@ -32,3 +32,6 @@ from roboticstoolbox.models.DH.Voraus import Yu
 * Add `'Yu'` to the list that defines `__all__`.
 
 Now the codes should be ready to run.
+
+# Run the codes
+The optimization algorithm can be found in `/Trajectory` folder. The main scripts are named by 01_ to 07_, which correspond to the order in which the optimization methods are introduced in the master's thesis. A comparison between HKA and other methods is provided in `08_Comparison.py`. 
