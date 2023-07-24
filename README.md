@@ -22,7 +22,7 @@ The DH Parameters of Yu+ needs to be included in RTB. To do so, follow the instr
 * Edit the file `__init__.py` in the target folder (DH), Add a line:
 
 ```python
-from roboticstoolbox.models.DH.Stanford import Voraus
+from roboticstoolbox.models.DH.Voraus import Yu
 ```
 
 * Add `'Yu'` to the list that defines `__all__`.
